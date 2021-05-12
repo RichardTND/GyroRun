@@ -1,0 +1,32 @@
+00001  0000             ;=======================================
+00002  0001             ;               GYRO-RUN
+00003  0001             ;       WRITTEN BY RICHARD BAYLISS
+00004  0001             ;         (CBMPRG STUDIO SOURCE)
+00005  0001             ;       (C) 2021 THE NEW DIMENSION
+00006  0001             ;=======================================
+00007  0001             
+00008  0001             ;GAME VARIABLES
+00009  0001             MUSICINIT  = $1000
+00010  0001             MUSICPLAY  = $1003
+00011  0001             
+00012  0001             SCREEN     = $0400
+00013  0001             COLOUR     = $D800
+00014  0001             
+
+******* 0 Label(s) *******
+
+******* 0 Unused label(s) *******
+
+******* 5 Variable(s) *******
+colour  = $D800
+musicinit  = $1000
+musicplay  = $1003
+screen  = $0400
+tgt_c64  = $0001
+******* 5 Unused variables(s) *******
+colour
+musicinit
+musicplay
+screen
+tgt_c64
+

@@ -1,0 +1,1447 @@
+00001  0000             TGT_C64
+00002  0001             ;=======================================
+00003  0001             ;               GYRO-RUN
+00004  0001             ;       WRITTEN BY RICHARD BAYLISS
+00005  0001             ;         (CBMPRG STUDIO SOURCE)
+00006  0001             ;       (C) 2021 THE NEW DIMENSION
+00007  0001             ;=======================================
+00008  0001             
+00009  0001             
+00010  0001             ;INSERT VARIABLES
+00011  0001             
+00012  0001             ;=======================================
+00013  0001             ;               GYRO-RUN
+00014  0001             ;       WRITTEN BY RICHARD BAYLISS
+00015  0001             ;         (CBMPRG STUDIO SOURCE)
+00016  0001             ;       (C) 2021 THE NEW DIMENSION
+00017  0001             ;=======================================
+00018  0001             
+00019  0001             ;GAME VARIABLES
+00020  0001             MUSICINIT  = $1000
+00021  0001             MUSICPLAY  = $1003
+00022  0001             
+00023  0001             SCREEN     = $0400
+00024  0001             COLOUR     = $D800
+00025  0001             BMPCOL     = $5800
+00026  0001             
+00027  0001             _EORCODE   = 128
+00028  0001             INDICATOR_FONT_NO = 192
+00029  0001             
+00030  0001             ; 10 SYS16384:REM (C) 2021 TND GAMES
+00031  0001             *=$0801
+00032  0801  21 08 0A              BYTE    $21, $08, $0A, $00, $9E, $31, $36, $33, $38, $34, $3A, $8F, $20, $28, $43, $29, $20, $32, $30, $32, $31, $20, $54, $4E, $44, $20, $47, $41, $4D, $45, $53, $00, $00, $00
+00033  0823             
+00034  0823             ;INSERT GAME MUSIC FILE
+00035  0823             *=$1000
+00036  1000                        INCBIN "C64\MUSIC.PRG",2,0
+00037  1C13             
+00038  1C13             ;INSERT GAME CHARACTER SET
+00039  1C13             *=$2000
+00040  2000                        INCBIN "C64\CHARSET.BIN"
+00041  27F8             ;INSERT GAME COLOUR DATA
+00042  27F8             *=$2800
+00043  2800             ATTRIBS
+00044  2800                        INCBIN "C64\GAMEATTRIBS.BIN"
+00045  28FF             ;INSERT GAME LEVEL MAP (THIS IS WHERE THE GAME
+00046  28FF             ;LEVELS WILL DECOMPRESS TO VIA EXOMIZER DECRUNCH SRC)
+00047  28FF             *=$2C00
+00048  2C00             MAP
+00049  2C00                        INCBIN "C64\LEVEL0.BIN"
+00050  2FE8             
+00051  2FE8             ;INSERT GAME SPRITES
+00052  2FE8             *=$3000
+00053  3000                        INCBIN "C64\GAMESPRITES.BIN"
+00054  3600             
+00055  3600             ;INSERT MAIN GAME CODE
+00056  3600             *=$4000
+00057  4000                        
+00058  4000             ;=======================================
+00059  4000             ;               GYRO-RUN
+00060  4000             ;       WRITTEN BY RICHARD BAYLISS
+00061  4000             ;         (CBMPRG STUDIO SOURCE)
+00062  4000             ;       (C) 2021 THE NEW DIMENSION
+00063  4000             ;=======================================
+00064  4000                        *=$4000
+00065  4000             
+00066  4000             ;MAIN GAME CODE
+00067  4000             
+00068  4000  AD A6 02              LDA $02A6
+00069  4003  8D 53 43              STA SYSTEM
+00070  4006  4C 00 80              JMP $8000
+00071  4009             ;---------------------------------------
+00072  4009             ;THE PLAYER STARTS A FRESH NEW GAME.
+00073  4009             ;KILL ALL EXISTING INTERRUPTS FROM THE
+00074  4009             ;TITLE SCREEN. SETUP THE VERY FIRST
+00075  4009             ;LEVEL AND DRAW IT TO THE GAME SCREEN
+00076  4009             ;---------------------------------------
+00077  4009             GAMESTART
+00078  4009                        
+00079  4009             STARTNEWGAME 
+00080  4009  78                    SEI
+00081  400A  A2 31                 LDX #$31
+00082  400C  A0 EA                 LDY #$EA
+00083  400E  8E 14 03              STX $0314
+00084  4011  8C 15 03              STY $0315
+00085  4014  A9 00                 LDA #$00
+00086  4016  8D 19 D0              STA $D019
+00087  4019  8D 1A D0              STA $D01A
+00088  401C                        
+00089  401C  A9 81                 LDA #$81
+00090  401E  8D 0D DC              STA $DC0D
+00091  4021  8D 0D DD              STA $DD0D
+00092  4024             
+00093  4024                        ;RESET FIREBUTTON PROPERTIES AND
+00094  4024                        ;SPEED SKILL
+00095  4024             
+00096  4024  A9 00                 LDA #0
+00097  4026  8D 56 43              STA FIREBUTTON
+00098  4029  8D 60 43              STA PLAYERSPEED
+00099  402C  8D 59 43              STA DIRDELAY
+00100  402F             
+00101  402F  A9 00                 LDA #0
+00102  4031  8D 64 43              STA SPAWNJEWELTIMER
+00103  4034                        
+00104  4034                        ;INIT SID CHIP
+00105  4034             
+00106  4034  A2 00                 LDX #$00
+00107  4036  A9 00      SILENCE    LDA #0
+00108  4038  9D 00 D4              STA $D400,X
+00109  403B  E8                    INX
+00110  403C  E0 18                 CPX #$18
+00111  403E  D0 F6                 BNE SILENCE
+00112  4040             
+00113  4040                        ;SETUP HARDWARE VIC2 REGISTERS
+00114  4040                        ;IN ORDER TO DISPLAY GAME GRAPHICS
+00115  4040             
+00116  4040  A9 03                 LDA #$03 ;VIC2 BANK #$03
+00117  4042  8D 00 DD              STA $DD00
+00118  4045  A9 18                 LDA #$18 ;CHARSET AT $2800
+00119  4047  8D 18 D0              STA $D018
+00120  404A  A9 1B                 LDA #$1B ;SCREEN MODE NORMAL
+00121  404C  8D 11 D0              STA $D011
+00122  404F  A9 18                 LDA #$18 ;SCREEN POSITION MULTICOLOUR
+00123  4051  8D 16 D0              STA $D016
+00124  4054                        
+00125  4054  A9 00                 LDA #$00 ;BLACK BORDER + BACKGROUND
+00126  4056  8D 20 D0              STA $D020
+00127  4059  A9 0C                 LDA #$0C
+00128  405B  8D 21 D0              STA $D021
+00129  405E  A9 0F                 LDA #$0F ;DARK GREY CHAR MULTICOLOUR 1
+00130  4060  8D 22 D0              STA $D022
+00131  4063  A9 0B                 LDA #$0B ;LIGHT GREY CHAR MULTICOLOUR 2
+00132  4065  8D 23 D0              STA $D023
+00133  4068                        
+00134  4068                        ;DRAW GAME SCREEN
+00135  4068             
+00136  4068  A2 00                 LDX #$00
+00137  406A  BD 00 2C   DRAWMAP    LDA MAP,X
+00138  406D  9D 00 04              STA SCREEN,X
+00139  4070  BD 00 2D              LDA MAP+$100,X
+00140  4073  9D 00 05              STA SCREEN+$100,X
+00141  4076  BD 00 2E              LDA MAP+$200,X
+00142  4079  9D 00 06              STA SCREEN+$200,X
+00143  407C  BD E8 2E              LDA MAP+$2E8,X
+00144  407F  9D E8 06              STA SCREEN+$2E8,X
+00145  4082  BC 00 2C              LDY MAP,X
+00146  4085  B9 00 28              LDA ATTRIBS,Y
+00147  4088  9D 00 D8              STA COLOUR,X
+00148  408B  BC 00 2D              LDY MAP+$100,X
+00149  408E  B9 00 28              LDA ATTRIBS,Y
+00150  4091  9D 00 D9              STA COLOUR+$100,X
+00151  4094  BC 00 2E              LDY MAP+$200,X
+00152  4097  B9 00 28              LDA ATTRIBS,Y
+00153  409A  9D 00 DA              STA COLOUR+$200,X
+00154  409D  BC E8 2E              LDY MAP+$2E8,X
+00155  40A0  B9 00 28              LDA ATTRIBS,Y
+00156  40A3  9D E8 DA              STA COLOUR+$2E8,X
+00157  40A6  E8                    INX
+00158  40A7  D0 C1                 BNE DRAWMAP
+00159  40A9             
+00160  40A9             ;---------------------------------------
+00161  40A9             ;SETUP THE PLAYER SPRITE PROPERTIES AND
+00162  40A9             ;OTHER DEFAULT GAME SETTINGS
+00163  40A9             ;---------------------------------------
+00164  40A9             
+00165  40A9                        ;PLAYER X POSITION
+00166  40A9  A9 54                 LDA #$54
+00167  40AB  8D 69 43              STA OBJPOS
+00168  40AE             
+00169  40AE                        ;PLAYER Y POSITION
+00170  40AE  A9 84                 LDA #$84
+00171  40B0  8D 6A 43              STA OBJPOS+1
+00172  40B3             
+00173  40B3                        ;INIT PLAYER SPEED
+00174  40B3  A9 00                 LDA #0
+00175  40B5  8D 60 43              STA PLAYERSPEED
+00176  40B8             
+00177  40B8                        ;TEST SINGLE SPRITE
+00178  40B8  A9 C0                 LDA #$C0
+00179  40BA  8D F8 07              STA $07F8
+00180  40BD  A9 01                 LDA #1
+00181  40BF  8D 27 D0              STA $D027
+00182  40C2             
+00183  40C2  A9 FF                 LDA #$FF
+00184  40C4  8D 15 D0              STA $D015
+00185  40C7  8D 1C D0              STA $D01C
+00186  40CA                        
+00187  40CA  A9 07                 LDA #$07
+00188  40CC  8D 25 D0              STA $D025
+00189  40CF  A9 0A                 LDA #$0A
+00190  40D1  8D 26 D0              STA $D026
+00191  40D4  A9 02                 LDA #$02
+00192  40D6  8D 27 D0              STA $D027
+00193  40D9                        
+00194  40D9  A9 00                 LDA #0
+00195  40DB  8D 5D 43              STA PLAYERRELEASED
+00196  40DE             ;---------------------------------------
+00197  40DE             ;SETUP THE IRQ RASTER INTERRUPT PLAYER
+00198  40DE             ;---------------------------------------
+00199  40DE             
+00200  40DE  A2 08                 LDX #<GAMEIRQ
+00201  40E0  A0 41                 LDY #>GAMEIRQ
+00202  40E2  8E 14 03              STX $0314
+00203  40E5  8C 15 03              STY $0315
+00204  40E8  A9 7F                 LDA #$7F
+00205  40EA  8D 0D DC              STA $DC0D
+00206  40ED  A9 36                 LDA #$36
+00207  40EF  8D 12 D0              STA $D012
+00208  40F2  A9 1B                 LDA #$1B
+00209  40F4  8D 11 D0              STA $D011
+00210  40F7  A9 01                 LDA #$01
+00211  40F9  8D 19 D0              STA $D019
+00212  40FC  8D 1A D0              STA $D01A
+00213  40FF  A9 00                 LDA #0
+00214  4101  20 00 10              JSR MUSICINIT
+00215  4104  58                    CLI
+00216  4105  4C 3C 41              JMP GAMELOOP
+00217  4108             
+00218  4108             ;---------------------------------------
+00219  4108             ;MAIN IRQ RASTER INTERRUPTS
+00220  4108             ;---------------------------------------
+00221  4108             
+00222  4108             GAMEIRQ
+00223  4108             
+00224  4108  EE 19 D0              INC $D019
+00225  410B  AD 0D DC              LDA $DC0D
+00226  410E  8D 0D DD              STA $DD0D
+00227  4111  A9 F8                 LDA #$F8
+00228  4113  8D 12 D0              STA $D012
+00229  4116  A9 01                 LDA #1
+00230  4118  8D 55 43              STA RT
+00231  411B  20 21 41              JSR MUSICPLAYER
+00232  411E  4C 7E EA              JMP $EA7E
+00233  4121             ;---------------------------------------
+00234  4121             ;MUSIC PLAYER (PAL/NTSC CHECK)
+00235  4121             ;---------------------------------------
+00236  4121             
+00237  4121             MUSICPLAYER 
+00238  4121  AD 53 43              LDA SYSTEM
+00239  4124  C9 01                 CMP #1
+00240  4126  F0 0A                 BEQ PAL
+00241  4128  EE 54 43              INC NTSCTIMER
+00242  412B  AD 54 43              LDA NTSCTIMER
+00243  412E  C9 06                 CMP #6
+00244  4130  F0 04                 BEQ RESETNTSC
+00245  4132  20 03 10   PAL        JSR MUSICPLAY
+00246  4135  60                    RTS
+00247  4136             
+00248  4136             RESETNTSC
+00249  4136  A9 00                 LDA #0
+00250  4138  8D 54 43              STA NTSCTIMER
+00251  413B  60                    RTS
+00252  413C             
+00253  413C             ;-----------------------------------------
+00254  413C             ;MAIN GAME LOOP
+00255  413C             ;-----------------------------------------
+00256  413C             
+00257  413C             GAMELOOP
+00258  413C                        ;SYNCHRONIZE TIMER WITH THE IRQ
+00259  413C                        ;RASTER INTERRUPT - SO THAT THE
+00260  413C                        ;ROUTINES ARE RUNNING AT LEVEL
+00261  413C                        ;SPEED AS THE INTERRIUPTS
+00262  413C             
+00263  413C  A9 00                 LDA #0
+00264  413E  8D 55 43              STA RT
+00265  4141  CD 55 43              CMP RT
+00266  4144  F0 FB                 BEQ *-3
+00267  4146                        
+00268  4146                        ;MAIN GAME LOOP SUB ROUTINES,
+00269  4146                        ;MERGED WITH THE SYNCTIMER (RT)
+00270  4146             
+00271  4146                        ;EXPAND SPRITE MSB POSITION
+00272  4146  20 55 41              JSR EXPANDSPRITEAREA
+00273  4149             
+00274  4149                        ;ANIMATE THE PLAYER'S SPINNER
+00275  4149  20 6E 41              JSR ANIMPLAYER
+00276  414C             
+00277  414C                        ;PLAYER CONTROLLER (USING FIRE BUTTON)
+00278  414C                        ;AND PLAYER MOVEMENT
+00279  414C  20 60 42              JSR PLAYERCONTROL
+00280  414F             
+00281  414F                        ;RANDOM READING OF PLOTTING JEWELS
+00282  414F  20 CD 41              JSR PLOTJEWELS
+00283  4152             
+00284  4152  4C 3C 41              JMP GAMELOOP
+00285  4155             
+00286  4155             ;-----------------------------------------
+00287  4155             ;EXPAND THE GAME SPRITE AREA SO THAT ALL
+00288  4155             ;SPRITES CAN USE MORE THAN 256 PIXELS
+00289  4155             ;AND BE ABLE TO MOVE ACROSS THE WHOLE X
+00290  4155             ;POSITION
+00291  4155             ;-----------------------------------------
+00292  4155             
+00293  4155             EXPANDSPRITEAREA 
+00294  4155  A2 00                 LDX #$00
+00295  4157  BD 6A 43   XLOOP      LDA OBJPOS+1,X
+00296  415A  9D 01 D0              STA $D001,X
+00297  415D  BD 69 43              LDA OBJPOS,X
+00298  4160  0A                    ASL
+00299  4161  6E 10 D0              ROR $D010
+00300  4164  9D 00 D0              STA $D000,X
+00301  4167  E8                    INX
+00302  4168  E8                    INX
+00303  4169  E0 10                 CPX #$10
+00304  416B  D0 EA                 BNE XLOOP
+00305  416D  60                    RTS
+00306  416E             
+00307  416E             ;-----------------------------------------
+00308  416E             ;ANIMATE THE PLAYER SPRITES AND ALSO
+00309  416E             ;MOVEMENT
+00310  416E             ;-----------------------------------------
+00311  416E             ANIMPLAYER 
+00312  416E                        ;CALL ROTATION SUBROUTINE
+00313  416E                        ;AND ALSO MAKE A DELAYED ANIMATION
+00314  416E                        ;BEFORE SWITCHING TO THE NEXT FRAME
+00315  416E             
+00316  416E  20 99 41              JSR ROTATESPINNER
+00317  4171  AD 57 43              LDA ANIMDELAY
+00318  4174  C9 01                 CMP #1
+00319  4176  F0 04                 BEQ ANIMDELAYOK
+00320  4178  EE 57 43              INC ANIMDELAY
+00321  417B  60                    RTS
+00322  417C             
+00323  417C                        ;RESET DELAYED ANIMATION AND SWITCH
+00324  417C                        ;TO THE NEXT SPRITE FRAME
+00325  417C             
+00326  417C             ANIMDELAYOK 
+00327  417C  A9 00                 LDA #0
+00328  417E  8D 57 43              STA ANIMDELAY
+00329  4181  AE 58 43              LDX ANIMPOINTER
+00330  4184  BD 7D 43              LDA PLAYERFRAME,X
+00331  4187  8D 5C 43              STA PLAYERTYPE
+00332  418A  E8                    INX
+00333  418B  E0 04                 CPX #4 ;THE SPINNER HAS 4 FRAMES
+00334  418D  F0 04                 BEQ RESETANIM
+00335  418F  EE 58 43              INC ANIMPOINTER
+00336  4192  60                    RTS
+00337  4193             
+00338  4193                        ;4TH FRAME REACHED, RESET ANIMATION
+00339  4193                        ;FOR SPINNER SPRITE
+00340  4193             
+00341  4193             RESETANIM
+00342  4193  A2 00                 LDX #0
+00343  4195  8E 58 43              STX ANIMPOINTER
+00344  4198  60                    RTS
+00345  4199             
+00346  4199             ;-----------------------------------------
+00347  4199             ;PLAYER DIRECTION ROTATIONAL VECTORS
+00348  4199             ;-----------------------------------------
+00349  4199             
+00350  4199             ROTATESPINNER 
+00351  4199                        
+00352  4199                        ;DELAY ROTATION OF SPINNER POSITION
+00353  4199                        ;BEFORE SWITCHING TO THE NEXT SPRITE
+00354  4199                        ;DIRECTION
+00355  4199             
+00356  4199  AD 59 43              LDA DIRDELAY
+00357  419C  CD 62 43              CMP ROTATESPEEDSKILL
+00358  419F  F0 04                 BEQ DIRSWITCH
+00359  41A1  EE 59 43              INC DIRDELAY
+00360  41A4             CANNOTSWAP 
+00361  41A4  60                    RTS
+00362  41A5             
+00363  41A5                        ;RESET DELAY TIMER AND SWITCH TO NEXT
+00364  41A5                        ;INDICATED ROTATION POSITION. THEN
+00365  41A5                        ;UPDATE THE ROTATOR'S INDICATOR POSITION
+00366  41A5             
+00367  41A5             DIRSWITCH
+00368  41A5  A9 00                 LDA #0
+00369  41A7  8D 59 43              STA DIRDELAY
+00370  41AA  AE 5A 43              LDX DIRPOINTER
+00371  41AD  BD 85 43              LDA PLAYERDIR,X
+00372  41B0  8D 5B 43              STA DIRECTIONSTORE
+00373  41B3  18                    CLC
+00374  41B4  69 C0                 ADC #INDICATOR_FONT_NO
+00375  41B6  8D D5 07              STA SCREEN+981
+00376  41B9  A9 00                 LDA #0
+00377  41BB  8D D5 DB              STA COLOUR+981
+00378  41BE                        
+00379  41BE  E8                    INX
+00380  41BF  E0 08                 CPX #8 ;TOTAL NUMBER OF DIRECTIONS = 8
+00381  41C1  F0 04                 BEQ RESETDIRECTION
+00382  41C3  EE 5A 43              INC DIRPOINTER
+00383  41C6  60                    RTS
+00384  41C7             
+00385  41C7                        ;RESET DIRECTION OF SPINNER
+00386  41C7                        ;INDICATOR
+00387  41C7             
+00388  41C7             RESETDIRECTION 
+00389  41C7  A2 00                 LDX #0
+00390  41C9  8E 5A 43              STX DIRPOINTER
+00391  41CC  60                    RTS
+00392  41CD             
+00393  41CD             ;-----------------------------------------------
+00394  41CD             ;RANDOM JEWEL PLOTTER ROUTINE
+00395  41CD             ;-----------------------------------------------
+00396  41CD             
+00397  41CD             PLOTJEWELS 
+00398  41CD                        ;FIRST WAIT FOR TIMER TO SPAWN NEW JEWELS
+00399  41CD                        ;BEFORE WE CAN PRODUCE A JEWEL
+00400  41CD             
+00401  41CD  AD 64 43              LDA SPAWNJEWELTIMER
+00402  41D0  CD 65 43              CMP SPAWNTIMEEXPIRY
+00403  41D3  F0 04                 BEQ SPAWNNEXTJEWEL
+00404  41D5  EE 64 43              INC SPAWNJEWELTIMER
+00405  41D8  60                    RTS
+00406  41D9             SPAWNNEXTJEWEL 
+00407  41D9  A9 00                 LDA #0
+00408  41DB  8D 64 43              STA SPAWNJEWELTIMER
+00409  41DE             
+00410  41DE  20 32 42              JSR RANDOMIZER
+00411  41E1  8D 63 43              STA JEWELPLOTCOUNTER
+00412  41E4                        
+00413  41E4  AE 63 43              LDX JEWELPLOTCOUNTER
+00414  41E7  BD 8D 43              LDA CHAR_READ_LO,X
+00415  41EA  8D 02 42              STA PLOTSTORE1+1
+00416  41ED  BD 8E 44              LDA CHAR_READ_HI,X
+00417  41F0  8D 03 42              STA PLOTSTORE1+2
+00418  41F3  BD 8F 45              LDA CHAR_READ_LO_2,X
+00419  41F6  8D 1B 42              STA PLOTSTORE3+1
+00420  41F9  BD 90 46              LDA CHAR_READ_HI_2,X
+00421  41FC  8D 1C 42              STA PLOTSTORE3+2
+00422  41FF                        
+00423  41FF                        
+00424  41FF                        ;PLOT STORE THE CHARSET AND THEN
+00425  41FF                        ;STORE TO A FREE ZEROPAGE (FOR)
+00426  41FF                        ;PLOTTING THE JEWEL
+00427  41FF             
+00428  41FF             PLACEJEWEL 
+00429  41FF  A9 32                 LDA #50
+00430  4201             PLOTSTORE1 
+00431  4201  8D 00 04              STA $0400
+00432  4204  AD 02 42              LDA PLOTSTORE1+1
+00433  4207  18                    CLC
+00434  4208  69 01                 ADC #1
+00435  420A  8D 16 42              STA PLOTSTORE2+1
+00436  420D  AD 03 42              LDA PLOTSTORE1+2
+00437  4210  8D 17 42              STA PLOTSTORE2+2
+00438  4213  A9 33                 LDA #51
+00439  4215             PLOTSTORE2 
+00440  4215  8D 01 04              STA $0401
+00441  4218  A9 34                 LDA #52
+00442  421A             PLOTSTORE3 
+00443  421A  8D 28 04              STA $0428
+00444  421D  AD 1B 42              LDA PLOTSTORE3+1
+00445  4220  18                    CLC
+00446  4221  69 01                 ADC #1
+00447  4223  8D 2F 42              STA PLOTSTORE4+1
+00448  4226  AD 1C 42              LDA PLOTSTORE3+2
+00449  4229  8D 30 42              STA PLOTSTORE4+2
+00450  422C  A9 35                 LDA #53
+00451  422E             PLOTSTORE4 
+00452  422E  8D 29 04              STA $0429
+00453  4231  60                    RTS
+00454  4232                        
+00455  4232                        ;RANDOMIZER SUBROUTINE
+00456  4232             RANDOMIZER 
+00457  4232  AD 68 43              LDA RAND+1
+00458  4235  8D 66 43              STA RTEMP
+00459  4238  AD 67 43              LDA RAND
+00460  423B  0A                    ASL
+00461  423C  2E 66 43              ROL RTEMP
+00462  423F  0A                    ASL
+00463  4240  2E 66 43              ROL RTEMP
+00464  4243  18                    CLC
+00465  4244  6D 67 43              ADC RAND
+00466  4247  48                    PHA
+00467  4248  AD 66 43              LDA RTEMP
+00468  424B  6D 68 43              ADC RAND+1
+00469  424E  8D 68 43              STA RAND+1
+00470  4251  68                    PLA
+00471  4252  69 11                 ADC #$11
+00472  4254  8D 67 43              STA RAND
+00473  4257  AD 68 43              LDA RAND+1
+00474  425A  69 36                 ADC #$36
+00475  425C  8D 68 43              STA RAND+1
+00476  425F  60                    RTS
+00477  4260             
+00478  4260                        
+00479  4260             
+00480  4260             
+00481  4260                        
+00482  4260                        
+00483  4260                        
+00484  4260                        
+00485  4260             
+00486  4260                        
+00487  4260             
+00488  4260                        
+00489  4260                        
+00490  4260                        
+00491  4260                        
+00492  4260             
+00493  4260             
+00494  4260                        
+00495  4260             
+00496  4260             ;=========================================
+00497  4260             
+00498  4260                        ;INCLUDE SOURCE CODE FOR PLAYER CONTROL
+00499  4260             ;==========================================
+00500  4260             ;MAIN PLAYER PROPERTIES AND CONTROL
+00501  4260             ;==========================================
+00502  4260             
+00503  4260             PLAYERCONTROL 
+00504  4260  AD 5C 43              LDA PLAYERTYPE
+00505  4263  8D F8 07              STA $07F8
+00506  4266             
+00507  4266  AD 5D 43              LDA PLAYERRELEASED
+00508  4269  C9 01                 CMP #1
+00509  426B  F0 03                 BEQ CONTROLMOVEMENT
+00510  426D  4C 73 42              JMP FIRECONTROL
+00511  4270             
+00512  4270             ;THE PLAYER IS ALLOWED TO MOVE
+00513  4270             CONTROLMOVEMENT 
+00514  4270  20 9A 42              JSR TESTDIRECTIONTOMOVE
+00515  4273             
+00516  4273             ;THE PLAYER IS WAITING FOR FIRE BUTTON
+00517  4273             ;IF PRESSED, THE PLAYER SHOULD GET RELEASED
+00518  4273             FIRECONTROL 
+00519  4273  AD 00 DC              LDA $DC00
+00520  4276  4A                    LSR
+00521  4277  4A                    LSR
+00522  4278  4A                    LSR
+00523  4279  4A                    LSR
+00524  427A  4A                    LSR
+00525  427B  2C 56 43              BIT FIREBUTTON
+00526  427E  6E 56 43              ROR FIREBUTTON
+00527  4281  30 15                 BMI NOFIREPRESS
+00528  4283  50 13                 BVC NOFIREPRESS
+00529  4285  A9 00                 LDA #0
+00530  4287  8D 56 43              STA FIREBUTTON
+00531  428A                        
+00532  428A  A9 01                 LDA #1
+00533  428C  8D 5D 43              STA PLAYERRELEASED
+00534  428F  8D 5F 43              STA PLAYERISMOVING
+00535  4292  AD 5B 43              LDA DIRECTIONSTORE
+00536  4295  8D 5E 43              STA PLAYERDIRSET
+00537  4298             NOFIREPRESS 
+00538  4298  60                    RTS
+00539  4299             STOPMOVING 
+00540  4299                        
+00541  4299  60                    RTS
+00542  429A             
+00543  429A             ;------------------------------------
+00544  429A             ;TEST DIRECTION IN WHICH THE PLAYER
+00545  429A             ;IS ALLOWED TO MOVE
+00546  429A             ;------------------------------------
+00547  429A             
+00548  429A             TESTDIRECTIONTOMOVE 
+00549  429A  AD 60 43              LDA PLAYERSPEED
+00550  429D  CD 61 43              CMP PLAYERSPEEDSKILL
+00551  42A0  F0 04                 BEQ PLAYEROKTOMOVENOW
+00552  42A2  EE 60 43              INC PLAYERSPEED
+00553  42A5  60                    RTS
+00554  42A6             PLAYEROKTOMOVENOW 
+00555  42A6  A9 00                 LDA #0
+00556  42A8  8D 60 43              STA PLAYERSPEED
+00557  42AB                        
+00558  42AB  AD 5E 43              LDA PLAYERDIRSET
+00559  42AE  C9 00                 CMP #0
+00560  42B0  D0 03                 BNE NOTUP
+00561  42B2  4C E7 42              JMP MOVEUP
+00562  42B5  C9 01      NOTUP      CMP #1
+00563  42B7  D0 03                 BNE NOTUPRIGHT
+00564  42B9  4C EB 42              JMP MOVEUPRIGHT
+00565  42BC  C9 02      NOTUPRIGHT CMP #2
+00566  42BE  D0 03                 BNE NOTRIGHT
+00567  42C0  4C F2 42              JMP MOVERIGHT
+00568  42C3  C9 03      NOTRIGHT   CMP #3
+00569  42C5  D0 03                 BNE NOTDOWNRIGHT
+00570  42C7  4C F6 42              JMP MOVEDOWNRIGHT
+00571  42CA  C9 04      NOTDOWNRIGHT CMP #4
+00572  42CC  D0 03                 BNE NOTDOWN
+00573  42CE  4C FD 42              JMP MOVEDOWN
+00574  42D1  C9 05      NOTDOWN    CMP #5
+00575  42D3  D0 03                 BNE NOTDOWNLEFT
+00576  42D5  4C 01 43              JMP MOVEDOWNLEFT
+00577  42D8  C9 06      NOTDOWNLEFT CMP #6
+00578  42DA  D0 03                 BNE NOTLEFT
+00579  42DC  4C 08 43              JMP MOVELEFT
+00580  42DF  C9 07      NOTLEFT    CMP #7
+00581  42E1  D0 03                 BNE NOTUPLEFT
+00582  42E3  4C 0C 43              JMP MOVEUPLEFT
+00583  42E6  60         NOTUPLEFT  RTS
+00584  42E7             
+00585  42E7             ;PLAYER MOVES UP ONLY
+00586  42E7  20 13 43   MOVEUP     JSR UPLOGIC
+00587  42EA  60                    RTS
+00588  42EB             
+00589  42EB             ;PLAYER MOVES UP AND RIGHT
+00590  42EB  20 13 43   MOVEUPRIGHT JSR UPLOGIC
+00591  42EE  20 43 43              JSR RIGHTLOGIC
+00592  42F1  60                    RTS
+00593  42F2             
+00594  42F2             ;PLAYER MOVES RIGHT ONLY
+00595  42F2  20 43 43   MOVERIGHT  JSR RIGHTLOGIC
+00596  42F5  60                    RTS
+00597  42F6             
+00598  42F6             ;PLAYER MOVES DOWN AND RIGHT
+00599  42F6  20 23 43   MOVEDOWNRIGHT JSR DOWNLOGIC
+00600  42F9  20 43 43              JSR RIGHTLOGIC
+00601  42FC  60                    RTS
+00602  42FD             
+00603  42FD             ;PLAYER MOVES DOWN ONLY
+00604  42FD  20 23 43   MOVEDOWN   JSR DOWNLOGIC
+00605  4300  60                    RTS
+00606  4301             
+00607  4301             ;PLAYER MOVES DOWN AND LEFT
+00608  4301  20 23 43   MOVEDOWNLEFT JSR DOWNLOGIC
+00609  4304  20 33 43              JSR LEFTLOGIC
+00610  4307  60                    RTS
+00611  4308             
+00612  4308             ;PLAYER MOVES LEFT ONLY
+00613  4308  20 33 43   MOVELEFT   JSR LEFTLOGIC
+00614  430B  60                    RTS
+00615  430C             
+00616  430C             ;PLAYER MOVES UP AND LEFT
+00617  430C  20 13 43   MOVEUPLEFT JSR UPLOGIC
+00618  430F  20 33 43              JSR LEFTLOGIC
+00619  4312  60                    RTS
+00620  4313             
+00621  4313             ;------------------------------------
+00622  4313             ;MOVEMENT LOGIC
+00623  4313             ;------------------------------------
+00624  4313             
+00625  4313             ;PLAYER UP LOGIC:
+00626  4313  AD 6A 43   UPLOGIC    LDA OBJPOS+1
+00627  4316  38                    SEC
+00628  4317  E9 02                 SBC #2
+00629  4319  C9 3A                 CMP #$3A
+00630  431B  B0 02                 BCS STOREUP
+00631  431D  A9 3A                 LDA #$3A
+00632  431F  8D 6A 43   STOREUP    STA OBJPOS+1
+00633  4322  60                    RTS
+00634  4323             
+00635  4323             ;PLAYER DOWN LOGIC
+00636  4323  AD 6A 43   DOWNLOGIC  LDA OBJPOS+1
+00637  4326  18                    CLC
+00638  4327  69 02                 ADC #2
+00639  4329  C9 E2                 CMP #$E2
+00640  432B  90 02                 BCC STOREDOWN
+00641  432D  A9 E2                 LDA #$E2
+00642  432F  8D 6A 43   STOREDOWN  STA OBJPOS+1
+00643  4332  60                    RTS
+00644  4333             
+00645  4333             ;PLAYER LEFT LOGIC
+00646  4333  AD 69 43   LEFTLOGIC  LDA OBJPOS
+00647  4336  38                    SEC
+00648  4337  E9 01                 SBC #1
+00649  4339  C9 10                 CMP #$10
+00650  433B  B0 02                 BCS STORELEFT
+00651  433D  A9 10                 LDA #$10
+00652  433F  8D 69 43   STORELEFT  STA OBJPOS
+00653  4342  60                    RTS
+00654  4343             
+00655  4343             ;PLAYER RIGHT LOGIC
+00656  4343  AD 69 43   RIGHTLOGIC LDA OBJPOS
+00657  4346  18                    CLC
+00658  4347  69 01                 ADC #1
+00659  4349  C9 9E                 CMP #$9E
+00660  434B  90 02                 BCC STORERIGHT
+00661  434D  A9 9E                 LDA #$9E
+00662  434F  8D 69 43   STORERIGHT STA OBJPOS
+00663  4352  60                    RTS
+00664  4353                        
+00665  4353             
+00666  4353             
+00667  4353                        
+00668  4353             
+00669  4353             ;=========================================
+00670  4353                        
+00671  4353                        ;INCLUDE SOURCE CODE FOR POINTERS
+00672  4353             ;=======================================
+00673  4353             ;               GYRO-RUN
+00674  4353             ;       WRITTEN BY RICHARD BAYLISS
+00675  4353             ;         (CBMPRG STUDIO SOURCE)
+00676  4353             ;       (C) 2021 THE NEW DIMENSION
+00677  4353             ;=======================================
+00678  4353             
+00679  4353             ;GENERAL POINTERS
+00680  4353             
+00681  4353  00         SYSTEM     BYTE 0
+00682  4354  00         NTSCTIMER  BYTE 0
+00683  4355  00         RT         BYTE 0
+00684  4356  00         FIREBUTTON BYTE 0
+00685  4357  00         ANIMDELAY  BYTE 0
+00686  4358  00         ANIMPOINTER BYTE 0
+00687  4359  00         DIRDELAY   BYTE 0
+00688  435A  00         DIRPOINTER BYTE 0
+00689  435B  00         DIRECTIONSTORE BYTE 0
+00690  435C  C0         PLAYERTYPE BYTE $C0
+00691  435D             ;PLAYER POINTERS
+00692  435D  00         PLAYERRELEASED BYTE 0
+00693  435E  00         PLAYERDIRSET BYTE 0
+00694  435F  00         PLAYERISMOVING BYTE 0
+00695  4360  00         PLAYERSPEED BYTE 0
+00696  4361  01         PLAYERSPEEDSKILL BYTE 1
+00697  4362  0A         ROTATESPEEDSKILL BYTE 10
+00698  4363             
+00699  4363             
+00700  4363             ;RANDOMIZER
+00701  4363  00         JEWELPLOTCOUNTER BYTE 0
+00702  4364  00         SPAWNJEWELTIMER BYTE 0
+00703  4365  64         SPAWNTIMEEXPIRY BYTE 100
+00704  4366  5A         RTEMP      BYTE $5A
+00705  4367  9D 5B      RAND       BYTE %10011101,%01011011
+00706  4369             
+00707  4369             ;SPRITE POINTERS
+00708  4369  00 00 00   OBJPOS     BYTE 0,0,0,0,0,0,0,0
+00709  4371  00 00 00              BYTE 0,0,0,0,0,0,0,0
+00710  4379             
+00711  4379             ;COLLIDER POINTERS
+00712  4379  00 00 00   COLLISION  BYTE 0,0,0,0
+00713  437D             
+00714  437D             ;SPRITE ANIMATION POINTERS
+00715  437D  C0 C1 C2   PLAYERFRAME BYTE $C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7
+00716  4385  00 01 02   PLAYERDIR  BYTE $00,$01,$02,$03,$04,$05,$06,$07
+00717  438D             
+00718  438D             ;POSSIBLE SCREEN LOW/HIBYTE TABLE FOR RANDOMIZER TO DEVELOP
+00719  438D             ;NEW GEM OBJECTS
+00720  438D             
+00721  438D             CHAR_READ_LO 
+00722  438D  A4 A6 A8              BYTE $A4,$A6,$A8,$AA,$AC,$AE,$B0,$B2,$B4,$B6,$B8,$BA,$BC,$BE,$C0,$C2
+00723  439D  F4 F6 F8              BYTE $F4,$F6,$F8,$FA,$FC,$FE,$00,$02,$04,$06,$08,$0A,$0C,$0E,$10,$12
+00724  43AD  44 46 48              BYTE $44,$46,$48,$4A,$4C,$4E,$50,$52,$54,$56,$58,$5A,$5C,$5E,$60,$62
+00725  43BD  94 96 98              BYTE $94,$96,$98,$9A,$9C,$9E,$A0,$A2,$A4,$A6,$A8,$AA,$AC,$AE,$B0,$B2
+00726  43CD  E4 E6 E8              BYTE $E4,$E6,$E8,$EA,$EC,$EE,$F0,$F2,$F4,$F6,$F8,$FA,$FC,$FE,$00,$02
+00727  43DD  34 36 38              BYTE $34,$36,$38,$3A,$3C,$3E,$40,$42,$44,$46,$48,$4A,$4C,$4E,$50,$52
+00728  43ED  84 86 88              BYTE $84,$86,$88,$8A,$8C,$8E,$90,$92,$94,$96,$98,$9A,$9C,$9E,$A0,$A2
+00729  43FD  D4 D6 D8              BYTE $D4,$D6,$D8,$DA,$DC,$DE,$E0,$E2,$E4,$E6,$E8,$EA,$EC,$EE,$F0,$F2
+00730  440D  A4 A6 A8              BYTE $A4,$A6,$A8,$AA,$AC,$AE,$B0,$B2,$B4,$B6,$B8,$BA,$BC,$BE,$C0,$C2
+00731  441D  F4 F6 F8              BYTE $F4,$F6,$F8,$FA,$FC,$FE,$00,$02,$04,$06,$08,$0A,$0C,$0E,$10,$12
+00732  442D  44 46 48              BYTE $44,$46,$48,$4A,$4C,$4E,$50,$52,$54,$56,$58,$5A,$5C,$5E,$60,$62
+00733  443D  94 96 98              BYTE $94,$96,$98,$9A,$9C,$9E,$A0,$A2,$A4,$A6,$A8,$AA,$AC,$AE,$B0,$B2
+00734  444D  E4 E6 E8              BYTE $E4,$E6,$E8,$EA,$EC,$EE,$F0,$F2,$F4,$F6,$F8,$FA,$FC,$FE,$00,$02
+00735  445D  34 36 38              BYTE $34,$36,$38,$3A,$3C,$3E,$40,$42,$44,$46,$48,$4A,$4C,$4E,$50,$52
+00736  446D  84 86 88              BYTE $84,$86,$88,$8A,$8C,$8E,$90,$92,$94,$96,$98,$9A,$9C,$9E,$A0,$A2
+00737  447D  D4 D6 D8              BYTE $D4,$D6,$D8,$DA,$DC,$DE,$E0,$E2,$E4,$E6,$E8,$EA,$EC,$EE,$F0,$F2
+00738  448D  00                    BYTE 0
+00739  448E             CHAR_READ_LO_END 
+00740  448E             CHAR_READ_HI 
+00741  448E  04 04 04              BYTE $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+00742  449E  04 04 04              BYTE $04,$04,$04,$04,$04,$04,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00743  44AE  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00744  44BE  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00745  44CE  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$06,$06
+00746  44DE  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00747  44EE  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00748  44FE  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00749  450E  04 04 04              BYTE $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+00750  451E  04 04 04              BYTE $04,$04,$04,$04,$04,$04,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00751  452E  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00752  453E  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00753  454E  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$06,$06
+00754  455E  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00755  456E  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00756  457E  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00757  458E             
+00758  458E  00                    BYTE 0
+00759  458F             CHAR_READ_HI_END 
+00760  458F             CHAR_READ_LO_2 
+00761  458F  CC CE D0              BYTE $CC,$CE,$D0,$D2,$D4,$D6,$D8,$DA,$DC,$DE,$E0,$E2,$E4,$E6,$E8,$EA
+00762  459F  1C 1E 20              BYTE $1C,$1E,$20,$22,$24,$26,$28,$2A,$2C,$2E,$30,$32,$34,$36,$38,$3A
+00763  45AF  6C 6E 70              BYTE $6C,$6E,$70,$72,$74,$76,$78,$7A,$7C,$7E,$80,$82,$84,$86,$88,$8A
+00764  45BF  BC BE C0              BYTE $BC,$BE,$C0,$C2,$C4,$C6,$C8,$CA,$CC,$CE,$D0,$D2,$D4,$D6,$D8,$DA
+00765  45CF  0C 0E 10              BYTE $0C,$0E,$10,$12,$14,$16,$18,$1A,$1C,$1E,$20,$22,$24,$26,$28,$2A
+00766  45DF  5C 5E 60              BYTE $5C,$5E,$60,$62,$64,$66,$68,$6A,$6C,$6E,$70,$72,$74,$76,$78,$7A
+00767  45EF  AC AE B0              BYTE $AC,$AE,$B0,$B2,$B4,$B6,$B8,$BA,$BC,$BE,$C0,$C2,$C4,$C6,$C8,$CA
+00768  45FF  FC FE 00              BYTE $FC,$FE,$00,$02,$04,$06,$08,$0A,$0C,$0E,$10,$12,$14,$16,$18,$1A
+00769  460F  CC CE D0              BYTE $CC,$CE,$D0,$D2,$D4,$D6,$D8,$DA,$DC,$DE,$E0,$E2,$E4,$E6,$E8,$EA
+00770  461F  1C 1E 20              BYTE $1C,$1E,$20,$22,$24,$26,$28,$2A,$2C,$2E,$30,$32,$34,$36,$38,$3A
+00771  462F  6C 6E 70              BYTE $6C,$6E,$70,$72,$74,$76,$78,$7A,$7C,$7E,$80,$82,$84,$86,$88,$8A
+00772  463F  BC BE C0              BYTE $BC,$BE,$C0,$C2,$C4,$C6,$C8,$CA,$CC,$CE,$D0,$D2,$D4,$D6,$D8,$DA
+00773  464F  0C 0E 10              BYTE $0C,$0E,$10,$12,$14,$16,$18,$1A,$1C,$1E,$20,$22,$24,$26,$28,$2A
+00774  465F  5C 5E 60              BYTE $5C,$5E,$60,$62,$64,$66,$68,$6A,$6C,$6E,$70,$72,$74,$76,$78,$7A
+00775  466F  AC AE B0              BYTE $AC,$AE,$B0,$B2,$B4,$B6,$B8,$BA,$BC,$BE,$C0,$C2,$C4,$C6,$C8,$CA
+00776  467F  FC FE 00              BYTE $FC,$FE,$00,$02,$04,$06,$08,$0A,$0C,$0E,$10,$12,$14,$16,$18,$1A
+00777  468F             
+00778  468F  00                    BYTE 0
+00779  4690             CHAR_READ_LO_2_END 
+00780  4690             CHAR_READ_HI_2 
+00781  4690  04 04 04              BYTE $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+00782  46A0  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00783  46B0  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00784  46C0  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00785  46D0  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00786  46E0  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00787  46F0  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00788  4700  06 06 07              BYTE $06,$06,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
+00789  4710  04 04 04              BYTE $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+00790  4720  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00791  4730  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00792  4740  05 05 05              BYTE $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+00793  4750  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00794  4760  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00795  4770  06 06 06              BYTE $06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06
+00796  4780  06 06 07              BYTE $06,$06,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
+00797  4790             
+00798  4790  00                    BYTE 0
+00799  4791             CHAR_READ_HI_2_END 
+00800  4791             
+00801  4791             
+00802  4791             
+00803  4791             ;INSERT THE TITLE SCREEN LOGO BITMAP (VIDCOM PAINT FORMAT)
+00804  4791             *=$5800
+00805  5800                        INCBIN "C64\LOGO.PRG",2,0
+00806  7F40             
+00807  7F40             *=$8000
+00808  8000             ;TITLE SCREEN CODE
+00809  8000             ;=======================================
+00810  8000             ;               GYRO-RUN
+00811  8000             ;       WRITTEN BY RICHARD BAYLISS
+00812  8000             ;         (CBMPRG STUDIO SOURCE)
+00813  8000             ;       (C) 2021 THE NEW DIMENSION
+00814  8000             ;=======================================
+00815  8000             
+00816  8000             TITLECODE
+00817  8000             
+00818  8000             ;DESTROY ALL IRQ RASTER INTERRUPTS
+00819  8000             
+00820  8000  78                    SEI
+00821  8001  A2 31                 LDX #$31
+00822  8003  A0 EA                 LDY #$EA
+00823  8005  A9 81                 LDA #$81
+00824  8007  8E 14 03              STX $0314
+00825  800A  8C 15 03              STY $0315
+00826  800D  8D 0D DC              STA $DC0D
+00827  8010  8D 0D DD              STA $DD0D
+00828  8013  A9 00                 LDA #$00
+00829  8015  8D 1A D0              STA $D01A
+00830  8018  8D 19 D0              STA $D019
+00831  801B                        
+00832  801B                        ;SILENCE SID CHIP
+00833  801B             
+00834  801B  A2 00                 LDX #$00
+00835  801D             BLANKSID
+00836  801D  A9 00                 LDA #$00
+00837  801F  9D 00 D4              STA $D400,X
+00838  8022  E8                    INX
+00839  8023  E0 18                 CPX #$18
+00840  8025  D0 F6                 BNE BLANKSID
+00841  8027             
+00842  8027             
+00843  8027             ;CLEAR SCREEN
+00844  8027             
+00845  8027  A2 00                 LDX #$00
+00846  8029             CLEARSCREENTITLE 
+00847  8029  A9 20                 LDA #$20
+00848  802B  18                    CLC
+00849  802C  69 80                 ADC #_EORCODE
+00850  802E  9D 00 04              STA SCREEN,X
+00851  8031  9D 00 05              STA SCREEN+$100,X
+00852  8034  9D 00 06              STA SCREEN+$200,X
+00853  8037  9D E8 06              STA SCREEN+$2E8,X
+00854  803A  E8                    INX
+00855  803B  D0 EC                 BNE CLEARSCREENTITLE
+00856  803D             
+00857  803D             ;SETUP THE TITLE SCREEN LOGO
+00858  803D             ;COLOUR MATRIX
+00859  803D             
+00860  803D  A2 00                 LDX #$00
+00861  803F             PAINTLOGO
+00862  803F  BD 00 58              LDA BMPCOL,X
+00863  8042  9D 00 D8              STA COLOUR,X
+00864  8045  BD 28 58              LDA BMPCOL+40,X
+00865  8048  9D 28 D8              STA COLOUR+40,X
+00866  804B  BD 50 58              LDA BMPCOL+80,X
+00867  804E  9D 50 D8              STA COLOUR+80,X
+00868  8051  BD 78 58              LDA BMPCOL+120,X
+00869  8054  9D 78 D8              STA COLOUR+120,X
+00870  8057  BD A0 58              LDA BMPCOL+160,X
+00871  805A  9D A0 D8              STA COLOUR+160,X
+00872  805D  BD C8 58              LDA BMPCOL+200,X
+00873  8060  9D C8 D8              STA COLOUR+200,X
+00874  8063  BD F0 58              LDA BMPCOL+240,X
+00875  8066  9D F0 D8              STA COLOUR+240,X
+00876  8069  BD 18 59              LDA BMPCOL+280,X
+00877  806C  9D 18 D9              STA COLOUR+280,X
+00878  806F  BD 40 59              LDA BMPCOL+320,X
+00879  8072  9D 40 D9              STA COLOUR+320,X
+00880  8075  E8                    INX
+00881  8076  D0 C7                 BNE PAINTLOGO
+00882  8078             
+00883  8078                        ;NOW FILL TEXT AREA SCREEN GREY
+00884  8078             
+00885  8078  A2 00                 LDX #$00
+00886  807A             FILLGREYTEXT 
+00887  807A  A9 01                 LDA #$01
+00888  807C  9D 68 D9              STA COLOUR+360,X
+00889  807F  9D 00 DA              STA COLOUR+$200,X
+00890  8082  9D E8 DA              STA COLOUR+$2E8,X
+00891  8085  E8                    INX
+00892  8086  D0 F2                 BNE FILLGREYTEXT
+00893  8088             
+00894  8088                        ;FILL BIG SCROLL COLOUR AREA
+00895  8088                        ;WITH A RED COLOUR SCHEME
+00896  8088             
+00897  8088  A2 00                 LDX #$00
+00898  808A             REDSCHEME
+00899  808A  A9 00                 LDA #$00 ;TOP+BOTTOM SHADE BROWN
+00900  808C  9D A8 DA              STA COLOUR+680,X
+00901  808F  A9 02                 LDA #$02
+00902  8091  9D D0 DA              STA COLOUR+720,X
+00903  8094  9D C0 DB              STA COLOUR+960,X
+00904  8097  A9 08                 LDA #$08
+00905  8099  9D F8 DA              STA COLOUR+760,X
+00906  809C  9D 98 DB              STA COLOUR+920,X
+00907  809F  A9 0A                 LDA #$0A ;REST - PINK
+00908  80A1                        
+00909  80A1  9D 20 DB              STA COLOUR+800,X
+00910  80A4  9D 48 DB              STA COLOUR+840,X
+00911  80A7  9D 70 DB              STA COLOUR+880,X
+00912  80AA  E8                    INX
+00913  80AB  E0 28                 CPX #40
+00914  80AD  D0 DB                 BNE REDSCHEME
+00915  80AF             
+00916  80AF                        ;TEST (REMOVE IF OK)
+00917  80AF  A9 02                 LDA #$02
+00918  80B1  8D 00 DD              STA $DD00
+00919  80B4             
+00920  80B4  A9 78                 LDA #$78
+00921  80B6  8D 18 D0              STA $D018
+00922  80B9  8D 16 D0              STA $D016
+00923  80BC  A9 00                 LDA #0
+00924  80BE  8D 20 D0              STA $D020
+00925  80C1  8D 21 D0              STA $D021
+00926  80C4  A9 3B                 LDA #$3B
+00927  80C6  8D 11 D0              STA $D011
+00928  80C9                        
+00929  80C9                        ;PUT TEXT (CREDITS) ONTO THE SCREEN (BANK #3)
+00930  80C9  A2 00                 LDX #$00
+00931  80CB             PUTTEXT
+00932  80CB  BD E0 82              LDA TEXTLINE1,X
+00933  80CE  18                    CLC
+00934  80CF  69 80                 ADC #_EORCODE
+00935  80D1  9D 68 05              STA SCREEN+360,X
+00936  80D4  BD 08 83              LDA TEXTLINE2,X
+00937  80D7  69 80                 ADC #_EORCODE
+00938  80D9  9D B8 05              STA SCREEN+440,X
+00939  80DC  BD 30 83              LDA TEXTLINE3,X
+00940  80DF  69 80                 ADC #_EORCODE
+00941  80E1  9D E0 05              STA SCREEN+480,X
+00942  80E4  BD 58 83              LDA TEXTLINE4,X
+00943  80E7  69 80                 ADC #_EORCODE
+00944  80E9  9D 08 06              STA SCREEN+520,X
+00945  80EC  BD 80 83              LDA TEXTLINE5,X
+00946  80EF  69 80                 ADC #_EORCODE
+00947  80F1  9D 30 06              STA SCREEN+560,X
+00948  80F4  BD A8 83              LDA TEXTLINE6,X
+00949  80F7  69 80                 ADC #_EORCODE
+00950  80F9  9D 58 06              STA SCREEN+600,X
+00951  80FC                        
+00952  80FC  E8                    INX
+00953  80FD  E0 28                 CPX #40
+00954  80FF  D0 CA                 BNE PUTTEXT
+00955  8101             
+00956  8101             
+00957  8101                        ;INITIALISE TITLE SCREEN SCROLL TEXT
+00958  8101             
+00959  8101  A9 D0                 LDA #<SCROLLTEXT
+00960  8103  8D AA 82              STA MESSREAD+1
+00961  8106  A9 83                 LDA #>SCROLLTEXT
+00962  8108  8D AB 82              STA MESSREAD+2
+00963  810B  A9 08                 LDA #8
+00964  810D  8D 08 82              STA COUNT
+00965  8110  A2 00                 LDX #0
+00966  8112  A9 00      CLRDATA    LDA #0
+00967  8114  9D F8 81              STA DATA1,X
+00968  8117  9D 00 82              STA DATA2,X
+00969  811A  E8                    INX
+00970  811B  E0 08                 CPX #8
+00971  811D  D0 F3                 BNE CLRDATA
+00972  811F             
+00973  811F             ;-----------------------------------------
+00974  811F             ;SETUP THE IRQ RASTER INTERRUPT FOR
+00975  811F             ;THE TITLE SCREEN
+00976  811F             ;-----------------------------------------
+00977  811F             
+00978  811F  A2 46                 LDX #<TITLEIRQ
+00979  8121  A0 81                 LDY #>TITLEIRQ
+00980  8123  A9 7F                 LDA #$7F
+00981  8125  8E 14 03              STX $0314
+00982  8128  8C 15 03              STY $0315
+00983  812B  8D 0D DC              STA $DC0D
+00984  812E  A9 2E                 LDA #$2E
+00985  8130  8D 12 D0              STA $D012
+00986  8133  A9 1B                 LDA #$1B
+00987  8135  8D 11 D0              STA $D011
+00988  8138  A9 01                 LDA #$01
+00989  813A  8D 1A D0              STA $D01A
+00990  813D  A9 00                 LDA #0
+00991  813F  20 00 10              JSR MUSICINIT
+00992  8142  58                    CLI
+00993  8143  4C D0 81              JMP TITLELOOP
+00994  8146             
+00995  8146             ;-----------------------------------------
+00996  8146             ;MAIN IRQ RASTER INTERRUPTS FOR THE
+00997  8146             ;FRONT END
+00998  8146             ;-----------------------------------------
+00999  8146             
+01000  8146             TITLEIRQ
+01001  8146                        ;SCROLL TEXT MESSAGE
+01002  8146             
+01003  8146  EE 19 D0              INC $D019
+01004  8149  AD 0D DC              LDA $DC0D
+01005  814C  8D 0D DD              STA $DD0D
+01006  814F  A9 22                 LDA #$22
+01007  8151  8D 12 D0              STA $D012
+01008  8154  A9 03                 LDA #$03
+01009  8156  8D 00 DD              STA $DD00
+01010  8159  A9 1B                 LDA #$1B
+01011  815B  8D 11 D0              STA $D011
+01012  815E  AD F7 81              LDA XPOS
+01013  8161  8D 16 D0              STA $D016
+01014  8164  A9 18                 LDA #$18
+01015  8166  8D 18 D0              STA $D018
+01016  8169                        
+01017  8169  A2 76                 LDX #<TITLEIRQ2
+01018  816B  A0 81                 LDY #>TITLEIRQ2
+01019  816D  8E 14 03              STX $0314
+01020  8170  8C 15 03              STY $0315
+01021  8173  4C 7E EA              JMP $EA7E
+01022  8176             
+01023  8176             TITLEIRQ2
+01024  8176                        ;BITMAP LOGO
+01025  8176             
+01026  8176  EE 19 D0              INC $D019
+01027  8179  A9 7A                 LDA #$7A
+01028  817B  8D 12 D0              STA $D012
+01029  817E  A9 02                 LDA #$02
+01030  8180  8D 00 DD              STA $DD00
+01031  8183  A9 3B                 LDA #$3B
+01032  8185  8D 11 D0              STA $D011
+01033  8188  A9 18                 LDA #$18
+01034  818A  8D 16 D0              STA $D016
+01035  818D  A9 78                 LDA #$78
+01036  818F  8D 18 D0              STA $D018
+01037  8192  A9 01                 LDA #1
+01038  8194  8D 55 43              STA RT
+01039  8197  20 21 41              JSR MUSICPLAYER
+01040  819A  A2 A7                 LDX #<TITLEIRQ3
+01041  819C  A0 81                 LDY #>TITLEIRQ3
+01042  819E  8E 14 03              STX $0314
+01043  81A1  8C 15 03              STY $0315
+01044  81A4  4C 7E EA              JMP $EA7E
+01045  81A7             
+01046  81A7             TITLEIRQ3
+01047  81A7                        ;STATIC SCREEN TEXT DISPLAY
+01048  81A7             
+01049  81A7  EE 19 D0              INC $D019
+01050  81AA  A9 BA                 LDA #$BA
+01051  81AC  8D 12 D0              STA $D012
+01052  81AF  A9 03                 LDA #$03
+01053  81B1  8D 00 DD              STA $DD00
+01054  81B4  A9 1B                 LDA #$1B
+01055  81B6  8D 11 D0              STA $D011
+01056  81B9  A9 18                 LDA #$18
+01057  81BB  8D 18 D0              STA $D018
+01058  81BE  A9 08                 LDA #$08
+01059  81C0  8D 16 D0              STA $D016
+01060  81C3                        
+01061  81C3  A2 46                 LDX #<TITLEIRQ
+01062  81C5  A0 81                 LDY #>TITLEIRQ
+01063  81C7  8E 14 03              STX $0314
+01064  81CA  8C 15 03              STY $0315
+01065  81CD  4C 7E EA              JMP $EA7E
+01066  81D0             
+01067  81D0             ;-----------------------------------------
+01068  81D0             ;MAIN TITLE SCREEN LOOP
+01069  81D0             ;-----------------------------------------
+01070  81D0             TITLELOOP
+01071  81D0             
+01072  81D0                        ;SYNCHRONIZE TIMER WITH THE IRQ
+01073  81D0                        ;RASTER INTERRUPT - SO THAT THE
+01074  81D0                        ;ROUTINES ARE RUNNING AT LEVEL
+01075  81D0                        ;SPEED AS THE INTERRIUPTS
+01076  81D0             
+01077  81D0  A9 00                 LDA #0
+01078  81D2  8D 55 43              STA RT
+01079  81D5  CD 55 43              CMP RT
+01080  81D8  F0 FB                 BEQ *-3
+01081  81DA  20 0A 82              JSR BIGSCROLL
+01082  81DD             
+01083  81DD                        ;WAIT FOR FIRE BUTTON TO BE
+01084  81DD                        ;PRESSED AND RELEASED BEFORE
+01085  81DD                        ;STARTING A NEW GAME
+01086  81DD             
+01087  81DD  AD 00 DC              LDA $DC00
+01088  81E0  4A                    LSR
+01089  81E1  4A                    LSR
+01090  81E2  4A                    LSR
+01091  81E3  4A                    LSR
+01092  81E4  4A                    LSR
+01093  81E5  2C 56 43              BIT FIREBUTTON
+01094  81E8  6E 56 43              ROR FIREBUTTON
+01095  81EB  30 E3                 BMI TITLELOOP
+01096  81ED  50 E1                 BVC TITLELOOP
+01097  81EF  A9 00                 LDA #0
+01098  81F1  8D 56 43              STA FIREBUTTON
+01099  81F4                        
+01100  81F4  4C 09 40              JMP GAMESTART
+01101  81F7                        
+01102  81F7             ;-----------------------------------------
+01103  81F7             ;SCROLL HI SCORE TABLE
+01104  81F7             ;-----------------------------------------
+01105  81F7             
+01106  81F7             CHARMEM    = $2400 ;MEMORY TO REACH THE CHARSET
+01107  81F7             SPACE      = 202     ;CUSTOM SPACE CHAR FOR THE SCROLL
+01108  81F7             CHARPRINT  = 201 ;CUSTOM PRINT CHAR FOR THE SCROLL
+01109  81F7             SCROLLSPEED = 7 ;SPEED OF 8X8 SCROLL
+01110  81F7             
+01111  81F7  07         XPOS       BYTE $07
+01112  81F8  00 00 00   DATA1      BYTE 0,0,0,0,0,0,0,0 ;PLOTTING CHAR DATA
+01113  8200  00 00 00   DATA2      BYTE 0,0,0,0,0,0,0,0 ;TO FORM CHARACTER
+01114  8208  08         COUNT      BYTE 8 ;AMOUNT OF BYTES TO READ
+01115  8209             
+01116  8209             ;SCROLL ROUTINE EXIT
+01117  8209             
+01118  8209             EXITSCROLL 
+01119  8209  60                    RTS
+01120  820A             
+01121  820A             ;-----------------------------------------
+01122  820A             ;BIG 8X8 SCROLLING TEXT
+01123  820A             ;-----------------------------------------
+01124  820A             
+01125  820A             BIGSCROLL
+01126  820A  AD F7 81              LDA XPOS
+01127  820D  38                    SEC
+01128  820E  E9 07                 SBC #SCROLLSPEED
+01129  8210  29 07                 AND #7
+01130  8212  8D F7 81              STA XPOS
+01131  8215  B0 F2                 BCS EXITSCROLL
+01132  8217             
+01133  8217                        ;TRANSDFORM CHAR TYPES INTO DATA
+01134  8217             
+01135  8217  A2 00                 LDX #$00
+01136  8219             SCRLOOP1   
+01137  8219  1E F8 81              ASL DATA1,X
+01138  821C  90 05                 BCC SCRLOOP2
+01139  821E  A9 C9                 LDA #CHARPRINT
+01140  8220  4C 25 82              JMP SCRLOOP3
+01141  8223             SCRLOOP2
+01142  8223  A9 CA                 LDA #SPACE
+01143  8225             SCRLOOP3
+01144  8225  9D 00 82              STA DATA2,X
+01145  8228  E8                    INX
+01146  8229  E0 08                 CPX #8
+01147  822B  D0 EC                 BNE SCRLOOP1
+01148  822D             
+01149  822D                        ;SCROLL THE 8 ROWS ACROSS THE SCREEN
+01150  822D                        
+01151  822D  A2 00                 LDX #$00
+01152  822F             SCRLOOP4   
+01153  822F  BD A9 06              LDA SCREEN+681,X
+01154  8232  9D A8 06              STA SCREEN+680,X
+01155  8235  BD D1 06              LDA SCREEN+721,X
+01156  8238  9D D0 06              STA SCREEN+720,X
+01157  823B  BD F9 06              LDA SCREEN+761,X
+01158  823E  9D F8 06              STA SCREEN+760,X
+01159  8241  BD D1 06              LDA SCREEN+721,X
+01160  8244  9D D0 06              STA SCREEN+720,X
+01161  8247  BD 21 07              LDA SCREEN+801,X
+01162  824A  9D 20 07              STA SCREEN+800,X
+01163  824D  BD 49 07              LDA SCREEN+841,X
+01164  8250  9D 48 07              STA SCREEN+840,X
+01165  8253  BD 71 07              LDA SCREEN+881,X
+01166  8256  9D 70 07              STA SCREEN+880,X
+01167  8259  BD 99 07              LDA SCREEN+921,X
+01168  825C  9D 98 07              STA SCREEN+920,X
+01169  825F  BD C1 07              LDA SCREEN+961,X
+01170  8262  9D C0 07              STA SCREEN+960,X
+01171  8265  E8                    INX
+01172  8266  E0 27                 CPX #39
+01173  8268  D0 C5                 BNE SCRLOOP4
+01174  826A                        
+01175  826A                        ;STORE EACH OF THE 8 BYTES MATRIX
+01176  826A                        ;TO THE VERY LAST COLUMN IN EACH
+01177  826A                        ;ROW
+01178  826A             
+01179  826A  AD 00 82              LDA DATA2
+01180  826D  8D CF 06              STA SCREEN+719
+01181  8270  AD 01 82              LDA DATA2+1
+01182  8273  8D F7 06              STA SCREEN+759
+01183  8276  AD 02 82              LDA DATA2+2
+01184  8279  8D 1F 07              STA SCREEN+799
+01185  827C  AD 03 82              LDA DATA2+3
+01186  827F  8D 47 07              STA SCREEN+839
+01187  8282  AD 04 82              LDA DATA2+4
+01188  8285  8D 6F 07              STA SCREEN+879
+01189  8288  AD 05 82              LDA DATA2+5
+01190  828B  8D 97 07              STA SCREEN+919
+01191  828E  AD 06 82              LDA DATA2+6
+01192  8291  8D BF 07              STA SCREEN+959
+01193  8294  AD 07 82              LDA DATA2+7
+01194  8297  8D E7 07              STA SCREEN+999
+01195  829A  CE 08 82              DEC COUNT
+01196  829D  D0 3E                 BNE SCRLOOP9
+01197  829F  A9 08                 LDA #8
+01198  82A1  8D 08 82              STA COUNT
+01199  82A4  A9 24                 LDA #>CHARMEM
+01200  82A6  8D CC 82              STA SCRLOOP8+2
+01201  82A9             SCRLOOP5
+01202  82A9             
+01203  82A9                        ;SCROLL TEXT MESSAGE WRAP CHECK. IF
+01204  82A9                        ;@ DETECTED, RESET THE SCROLLING
+01205  82A9                        ;MESSAGE POSITION.
+01206  82A9             
+01207  82A9             MESSREAD
+01208  82A9  AD D0 83              LDA SCROLLTEXT
+01209  82AC  C9 00                 CMP #$00
+01210  82AE  D0 0D                 BNE SCRLOOP6
+01211  82B0  A9 D0                 LDA #<SCROLLTEXT
+01212  82B2  8D AA 82              STA MESSREAD+1
+01213  82B5  A9 83                 LDA #>SCROLLTEXT
+01214  82B7  8D AB 82              STA MESSREAD+2
+01215  82BA  4C A9 82              JMP MESSREAD
+01216  82BD             
+01217  82BD                        ;BUID THE NEW CHAR DATA
+01218  82BD             
+01219  82BD             SCRLOOP6
+01220  82BD  0A                    ASL
+01221  82BE  0A                    ASL
+01222  82BF  0A                    ASL
+01223  82C0  90 03                 BCC SCRLOOP7
+01224  82C2  EE CC 82              INC SCRLOOP8+2
+01225  82C5             SCRLOOP7
+01226  82C5  8D CB 82              STA SCRLOOP8+1
+01227  82C8  A2 00                 LDX #0
+01228  82CA             SCRLOOP8
+01229  82CA  BD 00 24              LDA CHARMEM,X
+01230  82CD  9D F8 81              STA DATA1,X
+01231  82D0  E8                    INX
+01232  82D1  E0 08                 CPX #8
+01233  82D3  D0 F5                 BNE SCRLOOP8
+01234  82D5             
+01235  82D5                        ;SELF-MOD MOVING TO NEXT CHARACTER
+01236  82D5                        ;IN THE SCROLLER
+01237  82D5  EE AA 82              INC MESSREAD+1
+01238  82D8  D0 03                 BNE SCRLOOP9
+01239  82DA  EE AB 82              INC MESSREAD+2
+01240  82DD             SCRLOOP9
+01241  82DD  4C 09 82              JMP EXITSCROLL
+01242  82E0                        
+01243  82E0             ;HIGH SCORE LIST
+01244  82E0             
+01245  82E0             TEXTLINE1
+01246  82E0  20 20 20              TEXT '       >>> TODAYS BEST SPINNERS <<<     '
+01247  8308             TEXTLINE2
+01248  8308  20 20 20              TEXT '       1. RICHARD   ........ 010000     '
+01249  8330             TEXTLINE3
+01250  8330  20 20 20              TEXT '       2. HUGUES    ........ 007500     '
+01251  8358             TEXTLINE4
+01252  8358  20 20 20              TEXT '       3. ARTHUR    ........ 005000     '
+01253  8380             TEXTLINE5
+01254  8380  20 20 20              TEXT '       4. TND       ........ 002500     '
+01255  83A8             TEXTLINE6  
+01256  83A8  20 20 20              TEXT '       5. GAMES     ........ 000000     '
+01257  83D0             
+01258  83D0             
+01259  83D0             ;TITLE SCREEN SCROLL TEXT
+01260  83D0             
+01261  83D0             SCROLLTEXT 
+01262  83D0  20 20 20              TEXT '    ... GREETINGS AND WELCOME TO GYRO RUN ...   A '
+01263  8402  06 15 0E              TEXT 'FUN SINGLE-BUTTON HI SCORE ATTACK CHALLENGE FOR THE '
+01264  8436  03 13 04              TEXT 'CSDB FUN COMPO 2021 ...   PROGRAMMING WAS MADE BY RICHARD '
+01265  8470  02 01 19              TEXT 'BAYLISS USING CBM PRG STUDIO V3.14.0 ...   THE COOL SPRITES AND '
+01266  84B0  07 12 01              TEXT 'GRAPHICS WERE DRAWN ''
+01267  84C4  02 19 20              TEXT 'BY HUGUES (AX!S) POISSEROUX ...   FINALLY THIS COOL TUNE WAS '
+01268  8501  03 0F 0D              TEXT 'COMPOSED BY RICHARD BAYLISS ...   COPYRIGHT (C) 2021 THE NEW '
+01269  853E  04 09 0D              TEXT 'DIMENSION ...   HOW TO PLAY: THE OBJECT OF THIS GAME IS TO '
+01270  8579  13 10 09              TEXT 'SPIN AROUND THE GAME SCREEN AND COLLECT AS MANY JEWELS AS YOU '
+01271  85B7  10 0F 13              TEXT 'POSSIBLY CAN BEFORE YOU HIT THE SPIKES ...   IF YOU HIT THE '
+01272  85F3  13 10 09              TEXT 'SPIKES, YOU WILL LOSE A LIFE ...   IF YOU LOSE ALL THREE LIVES '
+01273  8632  14 08 05              TEXT 'THE GAME IS OVER ...   HINT: THE SMALL INDICATOR AT THE BOTTOM OF THE '
+01274  8678  13 03 12              TEXT 'SCREEN'
+01275  867E                        
+01276  867E  20 12 05              TEXT ' REPRESENTS THE DIRECTION WHICH YOUR PLAYER IS FACING ...   TRY '
+01277  86BE  14 0F 20              TEXT 'TO KEEP AN EYE ON IT ...   HAVE FUN ...   PRESS FIRE TO PLAY '
+01278  86FB  20 2E 2E              TEXT ' ...                                           '
+01279  872A  00                    BYTE 0 ;RESET SCROLL TEXT MARKER
+01280  872B                        
+01281  872B             
+
+******* 127 Label(s) *******
+animdelay = $4357 
+animdelayok = $417C 
+animplayer = $416E 
+animpointer = $4358 
+attribs = $2800 
+bigscroll = $820A 
+blanksid = $801D 
+cannotswap = $41A4 
+char_read_hi = $448E 
+char_read_hi_2 = $4690 
+char_read_hi_2_end = $4791 
+char_read_hi_end = $458F 
+char_read_lo = $438D 
+char_read_lo_2 = $458F 
+char_read_lo_2_end = $4690 
+char_read_lo_end = $448E 
+clearscreentitle = $8029 
+clrdata = $8112 
+collision = $4379 
+controlmovement = $4270 
+count = $8208 
+data1 = $81F8 
+data2 = $8200 
+dirdelay = $4359 
+directionstore = $435B 
+dirpointer = $435A 
+dirswitch = $41A5 
+downlogic = $4323 
+drawmap = $406A 
+exitscroll = $8209 
+expandspritearea = $4155 
+fillgreytext = $807A 
+firebutton = $4356 
+firecontrol = $4273 
+gameirq = $4108 
+gameloop = $413C 
+gamestart = $4009 
+jewelplotcounter = $4363 
+leftlogic = $4333 
+map = $2C00 
+messread = $82A9 
+movedown = $42FD 
+movedownleft = $4301 
+movedownright = $42F6 
+moveleft = $4308 
+moveright = $42F2 
+moveup = $42E7 
+moveupleft = $430C 
+moveupright = $42EB 
+musicplayer = $4121 
+nofirepress = $4298 
+notdown = $42D1 
+notdownleft = $42D8 
+notdownright = $42CA 
+notleft = $42DF 
+notright = $42C3 
+notup = $42B5 
+notupleft = $42E6 
+notupright = $42BC 
+ntsctimer = $4354 
+objpos = $4369 
+paintlogo = $803F 
+pal = $4132 
+placejewel = $41FF 
+playercontrol = $4260 
+playerdir = $4385 
+playerdirset = $435E 
+playerframe = $437D 
+playerismoving = $435F 
+playeroktomovenow = $42A6 
+playerreleased = $435D 
+playerspeed = $4360 
+playerspeedskill = $4361 
+playertype = $435C 
+plotjewels = $41CD 
+plotstore1 = $4201 
+plotstore2 = $4215 
+plotstore3 = $421A 
+plotstore4 = $422E 
+puttext = $80CB 
+rand = $4367 
+randomizer = $4232 
+redscheme = $808A 
+resetanim = $4193 
+resetdirection = $41C7 
+resetntsc = $4136 
+rightlogic = $4343 
+rotatespeedskill = $4362 
+rotatespinner = $4199 
+rt = $4355 
+rtemp = $4366 
+scrloop1 = $8219 
+scrloop2 = $8223 
+scrloop3 = $8225 
+scrloop4 = $822F 
+scrloop5 = $82A9 
+scrloop6 = $82BD 
+scrloop7 = $82C5 
+scrloop8 = $82CA 
+scrloop9 = $82DD 
+scrolltext = $83D0 
+silence = $4036 
+spawnjeweltimer = $4364 
+spawnnextjewel = $41D9 
+spawntimeexpiry = $4365 
+startnewgame = $4009 
+stopmoving = $4299 
+storedown = $432F 
+storeleft = $433F 
+storeright = $434F 
+storeup = $431F 
+system = $4353 
+testdirectiontomove = $429A 
+textline1 = $82E0 
+textline2 = $8308 
+textline3 = $8330 
+textline4 = $8358 
+textline5 = $8380 
+textline6 = $83A8 
+titlecode = $8000 
+titleirq = $8146 
+titleirq2 = $8176 
+titleirq3 = $81A7 
+titleloop = $81D0 
+uplogic = $4313 
+xloop = $4157 
+xpos = $81F7 
+
+******* 15 Unused label(s) *******
+cannotswap
+char_read_hi_2_end
+char_read_hi_end
+char_read_lo_2_end
+char_read_lo_end
+collision
+placejewel
+plotstore1
+plotstore2
+plotstore3
+plotstore4
+scrloop5
+startnewgame
+stopmoving
+titlecode
+
+******* 12 Variable(s) *******
+_eorcode  = $0080
+bmpcol  = $5800
+charmem  = $2400
+charprint  = $00C9
+colour  = $D800
+indicator_font_no  = $00C0
+musicinit  = $1000
+musicplay  = $1003
+screen  = $0400
+scrollspeed  = $0007
+space  = $00CA
+tgt_c64  = $0001
+******* 4 Unused variables(s) *******
+bmpcol
+colour
+screen
+tgt_c64
+

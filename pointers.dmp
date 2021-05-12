@@ -1,0 +1,24 @@
+00001  0000             ;=======================================
+00002  0001             ;               GYRO-RUN
+00003  0001             ;       WRITTEN BY RICHARD BAYLISS
+00004  0001             ;         (CBMPRG STUDIO SOURCE)
+00005  0001             ;       (C) 2021 THE NEW DIMENSION
+00006  0001             ;=======================================
+00007  0001             
+00008  0001             ;GENERAL POINTERS
+00009  0001             
+00010  0001             SYSTEM     BYTE 0
+00011  0001             NTSCTIMER  BYTE 0
+00012  0001             RT         BYTE 0
+00013  0001             
+00014  0001             
+
+******* 0 Label(s) *******
+
+******* 0 Unused label(s) *******
+
+******* 1 Variable(s) *******
+tgt_c64  = $0001
+******* 1 Unused variables(s) *******
+tgt_c64
+
