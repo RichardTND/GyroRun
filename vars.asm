@@ -40,6 +40,8 @@ skull_top_right = 67
 skull_bottom_left = 68
 skull_bottom_right = 69
 
+heart = 165 ; Lives indicator
+
 gamecharmemory = $2000
 
 

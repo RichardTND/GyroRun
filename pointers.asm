@@ -18,12 +18,19 @@ dirpointer !byte 0
 directionstore !byte 0
 playertype !byte $c0
 ;Player pointers 
+playerwaittime !byte 0
 playerreleased !byte 0
 playerdirset !byte 0
 playerismoving !byte 0
 playerspeed !byte 0
 playerspeedskill !byte 1
 rotatespeedskill !byte 7
+;Player death pointers
+playerisdead !byte 0
+playerdeathdelay !byte 0
+playerdeathpointer !byte 0
+;Amount of lives for the player
+lives !byte 0
 
 ;Scroller
 voiddelay !byte 0
@@ -49,18 +56,30 @@ collision !byte 0,0,0,0
 
 ;Sprite animation pointers
 playerframe !byte $c0,$c1,$c2,$c3,$c4,$c5,$c6,$c7
+
+;Player sprite death animation pointers
+playerdeathframe !byte $d0,$d1,$d2,$d3,$d4,$d5,$d6,$d7
+playerdeathframeend !byte $d7
+
+;Get Ready and Game Over Sprite Table
+getreadytable !byte $c4,$c5,$c6,$c7,$c5,$c8,$c9,$ca
+gameovertable !byte $c4,$c8,$cb,$c5,$cc,$cd,$c5,$c7
+
+
+;Directional pointers
 playerdir   !byte $00,$01,$02,$03,$04,$05,$06,$07
+
 
 ;Object table that has to spawn to screen
 
 obj_top_left_table 
-            !byte jewel_top_left, jewel2_top_left, jewel_top_left, jewel2_top_left, jewel_top_left, jewel2_top_left, skull_top_left, void
+            !byte jewel_top_left, jewel2_top_left, jewel_top_left, jewel2_top_left, jewel_top_left, jewel2_top_left, skull_top_left, jewel_top_left
 obj_top_right_table
-            !byte jewel_top_right, jewel2_top_right, jewel_top_right, jewel2_top_right, jewel_top_right, jewel2_top_right, skull_top_right, void
+            !byte jewel_top_right, jewel2_top_right, jewel_top_right, jewel2_top_right, jewel_top_right, jewel2_top_right, skull_top_right, jewel_top_right
 obj_bottom_left_table
-            !byte jewel_bottom_left, jewel2_bottom_left, jewel_bottom_left, jewel2_bottom_left, jewel_bottom_left, jewel2_bottom_left, skull_bottom_left, void
+            !byte jewel_bottom_left, jewel2_bottom_left, jewel_bottom_left, jewel2_bottom_left, jewel_bottom_left, jewel2_bottom_left, skull_bottom_left, jewel_bottom_left
 obj_bottom_right_table
-            !byte jewel_bottom_right, jewel2_bottom_right, jewel_bottom_right, jewel2_bottom_right, jewel_bottom_right, jewel2_bottom_right, skull_bottom_right, void
+            !byte jewel_bottom_right, jewel2_bottom_right, jewel_bottom_right, jewel2_bottom_right, jewel_bottom_right, jewel2_bottom_right, skull_bottom_right, jewel_bottom_right
             
 
 ;Player score

@@ -114,6 +114,7 @@ checkchar      ldy zp+3
                
 remove_jewel1               
                 jsr remove_jewel
+                jsr recolour
                 jsr doscore
                 jsr doscore
                 rts
@@ -121,6 +122,7 @@ remove_jewel1
                 ;The player picks a jewel worth 500 points 
 remove_jewel2                
                 jsr remove_jewel 
+                jsr recolour
                 jsr doscore
                 jsr doscore
                 jsr doscore
@@ -146,13 +148,12 @@ remove_jewel   lda #void
                 lda #void
                 sta (zp+1),y
                 rts
-
-                
                
-                ;Player gets hit
+                ;Player gets killed
 
-playerhit       lda #$54
-                sta objpos
-                lda #$84
-                sta objpos+1
+playerhit       lda #0
+                sta playerdeathdelay
+                sta playerdeathpointer
+                lda #1
+                sta playerisdead
                 rts

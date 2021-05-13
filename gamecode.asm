@@ -72,11 +72,23 @@ silence lda #0
         lda #$00 ;Black border + background
         sta $d020
         sta $d021
-        lda #$09 ;Brown outline - Char multicolour 1
+        lda #$0a ;Light red outline - Char multicolour 1
         sta $d022
-        lda #$01 ;White outline - Char multicolour 2
+        lda #$07 ;Yellow outline - Char multicolour 2
         sta $d023
         
+        ;Reset player idle wait time
+        
+        lda #200
+        sta playerwaittime
+        
+        ;Ensure player is alive
+        lda #0
+        sta playerisdead
+        
+        ;Set amount of lives the player has to 3
+        lda #3
+        sta lives
         
         ;Draw game screen
 
@@ -184,6 +196,11 @@ scloop  lda #$30
         lda #0
         jsr musicinit
         cli
+        
+        ;Initialise lives indicator
+        jsr livesindicator
+        
+        ;Jump to main game loop
         jmp gameloop
 
 ;---------------------------------------
@@ -242,9 +259,6 @@ gameloop
         ;Expand sprite MSB position
         jsr expandspritearea
         
-        ;Player sprite to background charset collision
-        jsr spritetochar 
-
         ;Animate the player's spinner
         jsr animplayer
 

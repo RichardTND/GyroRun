@@ -90,13 +90,13 @@ fillgreytext
 redscheme
         lda #$00 ;Top+bottom shade brown
         sta colour+680,x
-        lda #$02
+        lda #$04
         sta colour+720,x
         sta colour+960,x
-        lda #$08
+        lda #$0a
         sta colour+760,x
         sta colour+920,x
-        lda #$0a ;Rest - pink
+        lda #$07 ;Rest - pink
         
         sta colour+800,x
         sta colour+840,x
@@ -284,8 +284,23 @@ titleloop
         lsr
         bit firebutton
         ror firebutton
+        bmi titleloop2
+        bvc titleloop2
+        jmp okstart
+titleloop2        
+        ;Check spacebar 
+        lda $dc01
+        lsr
+        lsr
+        lsr
+        lsr
+        lsr
+        bit firebutton 
+        ror firebutton 
         bmi titleloop
         bvc titleloop
+        
+okstart        
         lda #0
         sta firebutton
       
@@ -451,21 +466,22 @@ textline6
 ;Title screen scroll text
 
 scrolltext
-        !text "    ... greetings and welcome to gyro run ...   a "
-        !text "fun single-button hi score attack challenge for the "
-        !text "csdb fun compo 2021 ...   programming was made by richard "
-        !text "bayliss using georg rottensteiner's c64studio 6.7 ...   the cool sprites and "
-        !text "graphics were drawn "
-        !text "by hugues (ax!s) poisseroux ...   finally this cool tune was "
-        !text "composed by richard bayliss ...   copyright (c) 2021 the new "
-        !text "dimension ...   how to play: the object of this game is to "
-        !text "spin around the game screen and collect as many jewels as you "
-        !text "possibly can before you hit the spikes ...   if you hit the "
-        !text "spikes, you will lose a life ...   if you lose all three lives "
-        !text "the game is over ...   hint: the small indicator at the bottom of the "
-        !text "screen"
-       
-        !text " represents the direction which your player is facing ...   try "
-        !text "to keep an eye on it ...   have fun ...   press fire to play "
-        !text " ...                                           "
+        !text "    ... hello there and welcome to gyro-run ...   "
+        !text "programming and font by richard bayliss ...   loading "
+        !text "screen, front end logo and game graphics by hugues (ax!s)"
+        !text " poisseroux ...   music and sound effects by richard bayliss ...   "
+        !text "copyright (c) 2021 the new dimension ...   written for the csdb "
+        !text "fun compo 2021 ...   how to play: press space or fire to launch your "
+        !text "spinner (according to the direction from the blue spin indicator) ...   "
+        !text "the object of the game is to pick up the jewels for points ...   "
+        !text "each type of jewel will have a score value added once picked up by your spinner ...   "
+        !text "pick up bombs to clear the game area you will get only 100 points awarded...   "
+        !text "it is possible for the objects to transform into some other "
+        !text "object ...   watch out for the deadly skulls or the spikes on the "
+        !text "walls ...   if your spinner bumps into those, you will lose a life ...   "
+        !text "there are 3 lives in total ...   the game is over as soon as "
+        !text "all 3 lives have been lost ...   keep on scoring as many points "
+        !text "as you possibly can, and try to make it onto the hi score table ...   "
+        !text "good luck ...   presss fire or space to play ...                      "
+        
         !byte 0 ;Reset scroll text marker
