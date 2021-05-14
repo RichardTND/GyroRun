@@ -13,9 +13,9 @@
 *=$0801
         !byte    $21, $08, $0A, $00, $9E, $31, $36, $33, $38, $34, $3a, $8f, $20, $28, $43, $29, $20, $32, $30, $32, $31, $20, $54, $4E, $44, $20, $47, $41, $4D, $45, $53, $00, $00, $00
 
-;Insert game music file
 *=$1000
-        !binary "c64\music.prg",,2
+;Title screen code
+        !source "titlescreen.asm"
 
 ;Insert game character set
 *=$2000
@@ -38,12 +38,14 @@ map
 *=$4000
         
         !source "gamecode.asm"
-
+ 
 ;Insert the title screen logo bitmap (Vidcom paint Format)
 *=$5800
         !binary "c64\logo.prg",,2
+        
 
 *=$8000
-;Title screen code
-        !source "titlescreen.asm"
+;Music
+        !binary "c64\music.prg",,2
+        
         

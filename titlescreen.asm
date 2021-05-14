@@ -20,6 +20,7 @@ titlecode
         lda #$00
         sta $d01a
         sta $d019
+        sta $d015
         
         ;Silence sid chip
 
@@ -471,10 +472,12 @@ scrolltext
         !text "screen, front end logo and game graphics by hugues (ax!s)"
         !text " poisseroux ...   music and sound effects by richard bayliss ...   "
         !text "copyright (c) 2021 the new dimension ...   written for the csdb "
-        !text "fun compo 2021 ...   how to play: press space or fire to launch your "
-        !text "spinner (according to the direction from the blue spin indicator) ...   "
-        !text "the object of the game is to pick up the jewels for points ...   "
-        !text "each type of jewel will have a score value added once picked up by your spinner ...   "
+        !text "fun compo 2021 ...   how to play: control: joystick port 2 ...   "
+        !text "use left/right in game to turn the dial at the bottom "
+        !text "of the screen ...   then press fire to launch your "
+        !text "spinner to that direction ...   warning: the spinner will move automatically if idle for some time ...   "
+        !text "the object of the game is to pick up the sweets for points ...   "
+        !text "each type of sweet will have a score value added once picked up by your spinner ...   "
         !text "pick up bombs to clear the game area you will get only 100 points awarded...   "
         !text "it is possible for the objects to transform into some other "
         !text "object ...   watch out for the deadly skulls or the spikes on the "

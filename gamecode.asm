@@ -10,8 +10,8 @@
 
         lda $02a6
         sta system
-        jsr plotjewels
-        jmp $8000
+        jsr plotsweets
+        jmp titlecode
 ;---------------------------------------
 ;The player starts a fresh new game. 
 ;Kill all existing interrupts from the
@@ -30,6 +30,7 @@ startnewgame
         sta $d019
         sta $d01a
        
+       
         lda #$81
         sta $dc0d
         sta $dd0d
@@ -43,10 +44,21 @@ startnewgame
         sta dirdelay
 
         lda #0
-        sta spawnjeweltimer
+        sta spawnsweettimer
         sta playerdirset
         
         jsr randomizer
+        jsr randomizer
+       
+        ;Reset spawn time expiry
+        lda #100
+        sta spawntimeexpiry
+        
+        lda #0
+        sta leveltimer
+        sta leveltimer+1
+        
+        
         
         ;Init SID chip
 
@@ -193,7 +205,7 @@ scloop  lda #$30
         lda #$01
         sta $d019
         sta $d01a
-        lda #0
+        lda #1 ;In game music
         jsr musicinit
         cli
         
@@ -266,12 +278,15 @@ gameloop
         ;and player movement
         jsr playercontrol
 
-        ;Random reading of plotting jewels
-        jsr plotjewels
+        ;Random reading of plotting sweets
+        jsr plotsweets
         
         ;Background animation
         jsr animbackground
 
+        ;Level control 
+        
+        jsr levelcontrol
         jmp gameloop
 
 ;-----------------------------------------
@@ -334,67 +349,24 @@ resetanim
         stx animpointer
         rts
 
-;-----------------------------------------
-;Player direction rotational vectors
-;-----------------------------------------
 
-rotatespinner
-     
-        ;Delay rotation of spinner position
-        ;before switching to the next sprite
-        ;direction
-
-        lda dirdelay
-        cmp rotatespeedskill
-        beq dirswitch
-        inc dirdelay
-cannotswap
-        rts
-
-        ;Reset delay timer and switch to next 
-        ;indicated rotation position. Then 
-        ;update the rotator's indicator position
-
-dirswitch
-        lda #0
-        sta dirdelay
-        ldx dirpointer
-        lda playerdir,x
-        sta directionstore
-        clc
-        adc #$d8
-        sta $07f9
-        
-        inx
-        cpx #8 ;Total number of directions = 8
-        beq resetdirection
-        inc dirpointer
-        rts
-
-        ;Reset direction of spinner
-        ;indicator
-
-resetdirection
-        ldx #0
-        stx dirpointer
-        rts
 
 ;-----------------------------------------------
-;Random jewel plotter routine
+;Random sweet plotter routine
 ;-----------------------------------------------
 
-plotjewels
-        ;First wait for timer to spawn new jewels 
-        ;before we can produce a jewel
+plotsweets
+        ;First wait for timer to spawn new sweets 
+        ;before we can produce a sweet
 
-        lda spawnjeweltimer
+        lda spawnsweettimer
         cmp spawntimeexpiry
-        beq spawnnextjewel
-        inc spawnjeweltimer
+        beq spawnnextsweet
+        inc spawnsweettimer
         rts
-spawnnextjewel
+spawnnextsweet
         lda #0
-        sta spawnjeweltimer
+        sta spawnsweettimer
 
         ;Now randomize the value and then
         ;plot one of eight different objects
@@ -402,13 +374,13 @@ spawnnextjewel
         ;counter
         
         jsr randomizer
-        sta jewelplotcounter
+        sta sweetplotcounter
         
         ;Call table read to position random
         ;selected object to spawn onto the 
         ;screen.
         
-        ldx jewelplotcounter
+        ldx sweetplotcounter
         lda char_read_lo,x
         sta plotstore1+1
         lda char_read_hi,x
@@ -434,11 +406,11 @@ spawnnextjewel
         
         ;Plot store the charset and then
         ;store to a free zeropage (for)
-        ;plotting the jewel
+        ;plotting the sweet
 
-placejewel
+placesweet
 objmod1  
-        lda #jewel_top_left
+        lda #sweet_top_left
 plotstore1
         sta $0400
         lda plotstore1+1
@@ -447,11 +419,11 @@ plotstore1
         sta plotstore2+1
         lda plotstore1+2
         sta plotstore2+2
-objmod2 lda #jewel_top_right
+objmod2 lda #sweet_top_right
 plotstore2
         sta $0401
 objmod3
-        lda #jewel_bottom_left
+        lda #sweet_bottom_left
 plotstore3
         sta $0428
         lda plotstore3+1
@@ -461,7 +433,7 @@ plotstore3
         lda plotstore3+2
         sta plotstore4+2
 objmod4
-        lda #jewel_bottom_right
+        lda #sweet_bottom_right
 plotstore4
         sta $0429
         
@@ -664,7 +636,53 @@ shiftright
           bne shiftright
           rts
           
-            
+      
+;----------------------------------------------
+
+;Level control - Basically tiime each level 
+;reset the object spawn delay counter and
+;make the spawn become more rapidly.
+
+;----------------------------------------------
+
+levelcontrol
+          lda leveltimer
+          cmp #$32 ;32 = 1 second
+          beq switchtimer
+          inc leveltimer
+          rts 
+switchtimer
+          lda #0
+          sta leveltimer
+          lda leveltimer+1
+          cmp #30 ;30 secs = level up
+          beq levelup
+          inc leveltimer+1
+          rts
+levelup   lda #0
+          sta leveltimer
+          sta leveltimer+1
+          lda spawntimeexpiry
+          cmp #10
+          beq spawnnomore
+          sec
+          sbc #10
+          sta spawntimeexpiry
+          
+          lda #0 
+          sta spawnsweettimer
+          lda #<sfx_levelup
+          ldy #>sfx_levelup
+          ldx #14
+          jsr sfxplay
+spawnnomore
+          rts 
+          
+          
+          
+          
+          
+         
         
 ;----------------------------------------------
 

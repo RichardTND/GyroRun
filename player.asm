@@ -52,6 +52,11 @@ checkrespawn
         lda lives     ;0 lives = game over
         beq callgameover
         
+        
+        ;Clear screen once again 
+        
+        jsr clearplayarea
+        
         ;Else all lives are not lost, so respawn
         ;the player and default the direction it
         ;can move.
@@ -75,8 +80,7 @@ checkrespawn
         rts
         
 callgameover
-        inc $d020
-        jmp *-3
+        jmp gameover
 
 ;---------------------------------------------------------------------------        
 ;Player is alive, so call necessary in game routines for the player. Also
@@ -139,6 +143,10 @@ oklaunch
         sta playerismoving
         lda directionstore
         sta playerdirset
+        lda #<sfx_shift
+        ldy #>sfx_shift
+        ldx #14
+        jsr sfxplay
 nofirepress
         rts
 stopmoving
@@ -338,4 +346,89 @@ show0lives      lda #space
                 sta screen+960+38
                 sta screen+960+37
                 rts
+                
+;-----------------------------------------
+;Player direction rotational vectors
+;-----------------------------------------
+
+rotatespinner
+     
+        ;joystick controlled rotation of spinner position
+        ;before switching to the next sprite
+        ;direction
+
+        lda dirdelay
+        cmp #3
+        beq dirswitch
+        inc dirdelay
+cannotswap
+        rts
+
+        ;Reset delay timer and switch to next 
+        ;indicated rotation position. Then 
+        ;update the rotator's indicator position
+
+dirswitch
+        lda #0
+        sta dirdelay 
+        
+        ;Grab joystick control 
+        
+jleft   lda #4
+        bit $dc00 ;LEFT 
+        bne jright
+        jmp dialclockwise
+        
+jright  lda #8
+        bit $dc00
+        bne nojoy
+        jmp dialanticlockwise
+nojoy        
+        rts 
+        
+dialclockwise
+        inc dirpointer 
+        lda dirpointer 
+        cmp #8
+        beq resetdial
+        sta dirpointer
+        jmp updatedial
+resetdial
+        lda #0
+        sta dirpointer
+        jmp updatedial
+        
+dialanticlockwise        
+        
+        dec dirpointer
+        lda dirpointer
+        cmp #$ff
+        beq resetdial2 
+        sta dirpointer
+        
+        
+updatedial
+        lda dirpointer
+        sta directionstore
+        clc
+        adc #$d8
+        sta $07f9
+        
+        
+        rts                
+        
+resetdial2
+        lda #$07
+        sta dirpointer
+        rts
+        
+;---------------------------------------------
+;Game over routine 
+
+gameover 
+        lda #2
+        jsr musicinit
+        inc $d020
+        jmp *-3
+        
                 

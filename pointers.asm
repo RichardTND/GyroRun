@@ -24,7 +24,7 @@ playerdirset !byte 0
 playerismoving !byte 0
 playerspeed !byte 0
 playerspeedskill !byte 1
-rotatespeedskill !byte 7
+rotatespeedskill !byte 4
 ;Player death pointers
 playerisdead !byte 0
 playerdeathdelay !byte 0
@@ -39,11 +39,13 @@ downtemp !byte 0
 lefttemp !byte 0
 righttemp !byte 0
 
+leveltimer !byte 0,0
+
 ;Randomizer
-jewelplotcounter !byte 0
-spawnjeweltimer !byte 0
+sweetplotcounter !byte 0
+spawnsweettimer !byte 0
 randomobjecttospawn !byte 0
-spawntimeexpiry !byte 100
+spawntimeexpiry !byte 120
 rtemp !byte $5a
 rand !byte %10011101,%01011011
 
@@ -73,13 +75,17 @@ playerdir   !byte $00,$01,$02,$03,$04,$05,$06,$07
 ;Object table that has to spawn to screen
 
 obj_top_left_table 
-            !byte jewel_top_left, jewel2_top_left, jewel_top_left, jewel2_top_left, jewel_top_left, jewel2_top_left, skull_top_left, jewel_top_left
-obj_top_right_table
-            !byte jewel_top_right, jewel2_top_right, jewel_top_right, jewel2_top_right, jewel_top_right, jewel2_top_right, skull_top_right, jewel_top_right
-obj_bottom_left_table
-            !byte jewel_bottom_left, jewel2_bottom_left, jewel_bottom_left, jewel2_bottom_left, jewel_bottom_left, jewel2_bottom_left, skull_bottom_left, jewel_bottom_left
-obj_bottom_right_table
-            !byte jewel_bottom_right, jewel2_bottom_right, jewel_bottom_right, jewel2_bottom_right, jewel_bottom_right, jewel2_bottom_right, skull_bottom_right, jewel_bottom_right
+            !byte sweet_top_left, sweet2_top_left, sweet3_top_left, sweet_top_left
+            !byte sweet2_top_left, sweet3_top_left, bomb_top_left, skull_top_left 
+obj_top_right_table 
+            !byte sweet_top_right, sweet2_top_right, sweet3_top_right, sweet_top_right
+            !byte sweet2_top_right, sweet3_top_right, bomb_top_right, skull_top_right 
+obj_bottom_left_table 
+            !byte sweet_bottom_left, sweet2_bottom_left, sweet3_bottom_left, sweet_bottom_left 
+            !byte sweet2_bottom_left, sweet3_bottom_left, bomb_bottom_left, skull_bottom_left
+obj_bottom_right_table 
+            !byte sweet_bottom_right, sweet2_bottom_right, sweet3_bottom_right, sweet_bottom_right 
+            !byte sweet2_bottom_right, sweet3_bottom_right, bomb_bottom_right, skull_bottom_right
             
 
 ;Player score
@@ -111,7 +117,7 @@ char_read_lo
 char_read_lo_end
 
 
-!align $100,0
+
 char_read_hi 
  !byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
  !byte $04,$04,$04,$04,$04,$04,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
@@ -155,7 +161,7 @@ char_read_lo_2
  !byte 0
 char_read_lo_2_end
 
-!align $100,0
+
 char_read_hi_2
  !byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
  !byte $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
@@ -178,8 +184,6 @@ char_read_hi_2
  
 char_read_hi_2_end 
 
-!align $100,0
-
 ;Collision char read tables for low and hi-!byte 
 ;(Reads entire set of character rows)
 
@@ -198,6 +202,33 @@ screenlo        !byte $00,$28,$50,$78,$a0
                 !byte $20,$48,$70,$98,$c0,$e0
                 
 
+;In game sound effects pointers
 
+sfx_pickup1     !byte $0E,$EE,$88,$B0,$41,$B0,$B4,$B4,$B7,$B7,$BC,$BC,$C0,$C0,$BC,$BC
+                !byte $B7,$B7,$B4,$B4,$B0,$B0,$A0,$10,$00
+                
+sfx_pickup2     !byte $0E,$EE,$88,$B0,$41,$B0,$B2,$B4,$B6,$B8,$BA,$BA,$BC,$BC,$BE,$BE
+                !byte $90,$11,$00                
+                
+sfx_pickup3     !byte $0E,$EE,$88,$B0,$41,$c0,$c2,$c4,$c6,$c8,$cA,$cA,$cC,$cC,$cE,$cE
+                !byte $d0,$d1,$00                
+                                
+sfx_bomb        !byte $0E,$EE,$88,$BC,$81,$BB,$BC,$BB,$BA,$BB,$BA,$BB,$BA,$B9,$BA,$B9
+                !byte $B8,$B9,$B8,$B7,$B8,$B6,$B7,$B6,$B5,$B6,$B5,$B4,$B5,$B4,$B3,$B4
+                !byte $B3,$B2,$B3,$B2,$B1,$B0,$90,$10,$00                
+                
+sfx_dead        !byte $0E,$EE,$88,$BC,$41,$BB,$BC,$BB,$BA,$BB,$BA,$BB,$BA,$B9,$BA,$B9
+                !byte $B8,$B9,$B8,$B7,$B8,$B6,$B7,$B6,$B5,$B6,$B5,$B4,$B5,$B4,$B3,$B4
+                !byte $B3,$B2,$B3,$B2,$B1,$B0,$90,$10,$00                
 
-
+sfx_shift        
+                !byte $0e,$ee,$00,$C0,$81,$C3,$C4,$CC,$C7,$CC,$00
+                
+sfx_levelup    !byte $0E,$EE,$88,$BC,$41,$c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
+                !byte $b4,$b3,$b2,$b1,$b9
+                !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
+                !byte $b4,$b3,$b2,$b1,$b9
+                !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
+                !byte $b4,$b3,$b2,$b1,$b9
+                !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
+                !byte $b4,$b3,$b2,$b1,$b9,$90,$10,0

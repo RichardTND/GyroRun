@@ -6,8 +6,9 @@
 ;=======================================
 
 ;Music variables
-musicinit = $1000 ;Initalise music player address
-musicplay = $1003 ;Main music player address
+musicinit = $8000 ;Initalise music player address
+musicplay = $8003 ;Main music player address
+sfxplay = $8006
 
 ;Screen pointer variables
 
@@ -25,20 +26,31 @@ indicator_sprite_no = $d8 ;Where the spinning icon has been assigned
 
 void = 18           ;No collision - 
 
-jewel_top_left = 50 ;char ID that represents jewel chars (2x2)
-jewel_top_right = 51 
-jewel_bottom_left = 52
-jewel_bottom_right = 53
+sweet_top_left = 47 ;char ID that represents sweet chars (2x2)
+sweet_top_right = 48 
+sweet_bottom_left = 49
+sweet_bottom_right = 50
 
-jewel2_top_left = 46 ;Jewel 2 char ID which should give more points once spawned
-jewel2_top_right = 47
-jewel2_bottom_left = 48
-jewel2_bottom_right = 49
+sweet2_top_left = 51 ;sweet 2 char ID which should give more points once spawned
+sweet2_top_right = 52
+sweet2_bottom_left = 53
+sweet2_bottom_right = 54
 
-skull_top_left = 66 ;Deadly object which the player should avoid 
-skull_top_right = 67
-skull_bottom_left = 68
-skull_bottom_right = 69
+sweet3_top_left = 55 ;sweet 3 char ID 
+sweet3_top_right = 56
+sweet3_bottom_left = 57
+sweet3_bottom_right = 58 
+
+bomb_top_left = 59 ;Char ID for screen clear bombs
+bomb_top_right = 60
+bomb_bottom_left = 61
+bomb_bottom_right = 62
+
+
+skull_top_left = 63;Deadly object which the player should avoid 
+skull_top_right = 64
+skull_bottom_left = 65
+skull_bottom_right = 66
 
 heart = 165 ; Lives indicator
 

@@ -97,43 +97,82 @@ colloop        lda zp+1
 
 checkchar      ldy zp+3
                lda (zp+1),y
-               cmp #jewel_top_left
-               beq remove_jewel1
-               cmp #jewel2_top_left
-               beq remove_jewel2
-               
+               cmp #sweet_top_left
+               beq remove_sweet1
+               cmp #sweet2_top_left
+               beq remove_sweet2
+               cmp #sweet3_top_left 
+               beq remove_sweet3
+               cmp #bomb_top_left
+               beq destroybomb
                cmp #spikes1
-               beq playerhit
+               beq _playerhit
                cmp #spikes2
-               beq playerhit
-               cmp #spikes3
-               bcs playerhit
-               rts
-
-               ;The player picks up a jewel worth 200 points 
+               beq _playerhit
                
-remove_jewel1               
-                jsr remove_jewel
+               cmp #skull_top_left
+               bcs _playerhit
+               rts
+_playerhit    
+               jmp playerhit 
+               
+               ;The player picks up a bomb - clear the screen
+               ;and award 100 points
+destroybomb
+               jsr remove_object
+               jsr clearplayarea
+               jsr recolour
+               jsr doscore
+               lda #<sfx_bomb 
+               ldy #>sfx_bomb 
+               ldx #14
+               jsr sfxplay
+               rts
+               
+               ;The player picks up a sweet worth 200 points 
+               
+remove_sweet1               
+                jsr remove_object
                 jsr recolour
                 jsr doscore
                 jsr doscore
+                lda #<sfx_pickup1
+               ldy #>sfx_pickup1
+               ldx #14
+               jsr sfxplay
                 rts
                                   
-                ;The player picks a jewel worth 500 points 
-remove_jewel2                
-                jsr remove_jewel 
+                ;The player picks a sweet worth 500 points 
+remove_sweet2                
+                jsr remove_object
                 jsr recolour
                 jsr doscore
                 jsr doscore
                 jsr doscore
-                jsr doscore
-                jsr doscore
+                lda #<sfx_pickup2
+               ldy #>sfx_pickup2
+               ldx #14
+               jsr sfxplay
                 rts
                 
+remove_sweet3 
+               jsr remove_object
+               jsr recolour
+               jsr doscore
+               jsr doscore
+               jsr doscore 
+               jsr doscore
+               jsr doscore
+               lda #<sfx_pickup3
+               ldy #>sfx_pickup3
+               ldx #14
+               jsr sfxplay
+               rts
+               
+                
 
-               ;Remove jewels from top left
-
-remove_jewel   lda #void
+               ;Remove sweets from top left
+remove_object   lda #void
                 sta (zp+1),y
                 iny
                 lda #void
@@ -156,4 +195,37 @@ playerhit       lda #0
                 sta playerdeathpointer
                 lda #1
                 sta playerisdead
+                lda #<sfx_dead
+               ldy #>sfx_dead
+               ldx #14
+               jsr sfxplay
                 rts
+                
+                ;Smart bomb was activated, 
+                ;clear the entire play area
+                
+clearplayarea   
+        ldx #$00
+copymap lda map,x
+        sta screen,x
+        lda map+$100,x
+        sta screen+$100,x
+        lda map+$200,x
+        sta screen+$200,x
+        lda map+$2e8-40,x
+        sta screen+$2e8-40,x
+        ldy map,x
+        lda attribs,y
+        sta colour,x
+        ldy map+$100,x
+        lda attribs,y
+        sta colour+$100,x
+        ldy map+$200,x
+        lda attribs,y
+        sta colour+$200,x
+        ldy map+$2e8-40,x
+        lda attribs,y
+        sta colour+$2e8-40,x
+        inx
+        bne copymap               
+        rts  
