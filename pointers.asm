@@ -7,6 +7,7 @@
 
 ;General pointers
 
+
 system  !byte 0
 ntsctimer !byte 0
 rt      !byte 0
@@ -16,19 +17,23 @@ animpointer !byte 0
 dirdelay !byte 0
 dirpointer !byte 0
 directionstore !byte 0
-playertype !byte $c0
 ;Player pointers 
 playerwaittime !byte 0
 playerreleased !byte 0
 playerdirset !byte 0
 playerismoving !byte 0
 playerspeed !byte 0
-playerspeedskill !byte 1
-rotatespeedskill !byte 4
+playerspeedskill !byte 2
+playeranimtype !byte $c0
 ;Player death pointers
 playerisdead !byte 0
 playerdeathdelay !byte 0
 playerdeathpointer !byte 0
+shielddelay !byte 0
+shieldpointer !byte 0
+shieldtimer !byte 200
+explodepointer !byte 0
+explodedelay !byte 0
 ;Amount of lives for the player
 lives !byte 0
 
@@ -56,8 +61,10 @@ objpos !byte 0,0,0,0,0,0,0,0
 ;Collider pointers
 collision !byte 0,0,0,0
 
+!align $100,0
 ;Sprite animation pointers
-playerframe !byte $c0,$c1,$c2,$c3,$c4,$c5,$c6,$c7
+
+animtable   !byte $c0,$c1,$c2,$c3,$c0,$c1,$c2,$c3
 
 ;Player sprite death animation pointers
 playerdeathframe !byte $d0,$d1,$d2,$d3,$d4,$d5,$d6,$d7
@@ -71,6 +78,22 @@ gameovertable !byte $c4,$c8,$cb,$c5,$cc,$cd,$c5,$c7
 ;Directional pointers
 playerdir   !byte $00,$01,$02,$03,$04,$05,$06,$07
 
+;Sprite position for GET READY and game over
+getreadypos
+            !byte $44,$78,$54,$78,$64,$78,$34,$98
+            !byte $44,$98,$54,$98,$64,$98,$74,$98
+            
+gameoverpos
+            !byte $3c,$78,$4c,$78,$5c,$78,$6c,$78
+            !byte $3c,$98,$4c,$98,$5c,$98,$6c,$98  
+            
+shieldcolourtable
+            !byte $02,$08,$0a,$07,$01,$07,$0a,$08
+            
+;Smart bomb explosion colour table
+
+explodecolourtable
+              !byte $09,$02,$0a,$07,$01,$01,$07,$0a,$02,$09,$00
 
 ;Object table that has to spawn to screen
 
@@ -232,3 +255,5 @@ sfx_levelup    !byte $0E,$EE,$88,$BC,$41,$c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7
                 !byte $b4,$b3,$b2,$b1,$b9
                 !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
                 !byte $b4,$b3,$b2,$b1,$b9,$90,$10,0
+
+sfx_spawn       !byte $0E,$EE,$88,$df,$81,$ad,$41,$ac,$ab,$aa,$a8,0

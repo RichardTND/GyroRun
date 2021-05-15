@@ -57,7 +57,7 @@ spritetochar
                 jsr testcollision
                 rts
 
-                rts
+                ;rts
 testcollision
 
                lda $d000
@@ -96,114 +96,220 @@ colloop        lda zp+1
                bne colloop
 
 checkchar      ldy zp+3
-               lda (zp+1),y
-               cmp #sweet_top_left
-               beq remove_sweet1
-               cmp #sweet2_top_left
-               beq remove_sweet2
-               cmp #sweet3_top_left 
-               beq remove_sweet3
-               cmp #bomb_top_left
-               beq destroybomb
-               cmp #spikes1
-               beq _playerhit
-               cmp #spikes2
-               beq _playerhit
+               jsr sweets1
+               jsr sweets2
+               jsr sweets3
+               jsr bombs
+               jmp skulls
                
-               cmp #skull_top_left
-               bcs _playerhit
-               rts
-_playerhit    
-               jmp playerhit 
+;The player has been caught, kill instantly
                
-               ;The player picks up a bomb - clear the screen
-               ;and award 100 points
-destroybomb
-               jsr remove_object
-               jsr clearplayarea
-               jsr recolour
-               jsr doscore
-               lda #<sfx_bomb 
-               ldy #>sfx_bomb 
-               ldx #14
+instantkill   lda #0
+               sta playerdeathdelay
+               sta playerdeathpointer
+               lda #1
+               sta playerisdead
+               jmp playdeathsfx
+               
+;---------------------------------------------
+;Test collision with sweets type 1
+;---------------------------------------------
+sweets1       ldy zp+3
+              lda (zp+1),y
+              cmp #sweet_top_left
+              beq remove_sweet_top_left 
+              cmp #sweet_top_right 
+              beq remove_sweet_top_right 
+              
+              rts
+remove_sweet_top_left
+              jsr remove_top_left
+sweet1main    jsr score200
+              jsr shieldboostcheck
+              jsr playpickup1sfx
+              rts
+              
+remove_sweet_top_right
+              jsr remove_top_right
+              jmp sweet1main
+              
+;---------------------------------------------
+sweets2       ldy zp+3
+              lda (zp+1),y
+              cmp #sweet2_top_left
+              beq remove_sweet2_top_left 
+              cmp #sweet2_top_right
+              beq remove_sweet2_top_right
+            
+              rts 
+              
+remove_sweet2_top_left
+              jsr remove_top_left
+sweet2main    jsr score300
+              jsr shieldboostcheck
+              jsr playpickupsfx
+              rts
+remove_sweet2_top_right
+              jsr remove_top_right
+              jmp sweet2main
+              
+;----------------------------------------------
+sweets3       ldy zp+3
+              lda (zp+1),y
+              cmp #sweet3_top_left 
+              beq remove_sweet_top_left 
+              cmp #sweet3_top_right
+              beq remove_sweet_top_right 
+            
+              rts
+              
+remove_sweet3_top_left
+              jsr remove_top_left
+sweet3main    jsr score500
+              jsr shieldboostcheck
+              jsr playpickupsfx
+              rts
+              
+remove_sweet3_top_right
+              jsr remove_top_right
+              jmp sweet3main
+              
+;----------------------------------------------
+bombs         ldy zp+3
+              lda (zp+1),y
+              cmp #bomb_top_left
+              beq bombactivated
+              cmp #bomb_top_right 
+              beq bombactivated
+              cmp #bomb_bottom_left
+              beq bombactivated
+              cmp #bomb_bottom_right
+              beq bombactivated
+              rts
+bombactivated 
+              jsr score100
+              jsr clearplayarea
+              ldx #0
+              stx shieldtimer
+              ldx #0
+              stx explodepointer
+              jsr playbombsfx
+              
+              rts
+;----------------------------------------------
+skulls        lda (zp+1),y
+              cmp #skull_top_left
+              beq testkillplayer
+              cmp #skull_top_right
+              beq testkillplayer
+              cmp #skull_bottom_left
+              beq testkillplayer
+              cmp #skull_bottom_right 
+              beq testkillplayer
+              rts
+              
+testkillplayer
+              lda shieldtimer
+              beq playerdeath
+              rts
+playerdeath   jmp instantkill              
+
+;----------------------------------------------
+;Shield boost check 
+;----------------------------------------------
+shieldboostcheck
+              lda shieldtimer
+              beq activateshield
+              rts
+activateshield
+              lda #100
+              sta shieldtimer
+              rts
+              
+;----------------------------------------------
+;Object removals (when a sweet has been 
+;picked up) 
+;----------------------------------------------      
+        
+remove_top_left
+              
+              lda #void
+              sta (zp+1),y 
+              iny
+              sta (zp+1),y
+              tya
+              clc
+              adc #40
+              tay
+              lda #void 
+              sta (zp+1),y
+              dey 
+              sta (zp+1),y
+              jmp repaint
+              
+remove_top_right
+              lda #void
+              sta (zp+1),y
+              dey
+              sta (zp+1),y
+              tya
+              clc
+              adc #40
+              tay
+              lda #void
+              sta (zp+1),y
+              iny
+              sta (zp+1),y
+              jmp repaint
+              
+              
+score500      jsr doscore
+              jsr doscore
+score300      jsr doscore
+score200      jsr doscore
+score100      jmp doscore
+              
+              
+;---------------------------------------------              
+               
+;Sound effects pointers 
+
+playdeathsfx   ldx #7
+               lda #<sfx_dead
+               ldy #>sfx_dead
                jsr sfxplay
                rts
                
-               ;The player picks up a sweet worth 200 points 
-               
-remove_sweet1               
-                jsr remove_object
-                jsr recolour
-                jsr doscore
-                jsr doscore
-                lda #<sfx_pickup1
+;Collect 1 sfx 
+playpickup1sfx ldx #14
+               lda #<sfx_pickup1
                ldy #>sfx_pickup1
-               ldx #14
                jsr sfxplay
-                rts
-                                  
-                ;The player picks a sweet worth 500 points 
-remove_sweet2                
-                jsr remove_object
-                jsr recolour
-                jsr doscore
-                jsr doscore
-                jsr doscore
-                lda #<sfx_pickup2
+               rts
+               
+;Collect 2 sfx 
+playpickup2sfx ldx #14
+               lda #<sfx_pickup2
                ldy #>sfx_pickup2
-               ldx #14
-               jsr sfxplay
-                rts
-                
-remove_sweet3 
-               jsr remove_object
-               jsr recolour
-               jsr doscore
-               jsr doscore
-               jsr doscore 
-               jsr doscore
-               jsr doscore
+               jsr sfxplay 
+               rts 
+               
+;Collect 3 sfx
+playpickupsfx  ldx #14
                lda #<sfx_pickup3
                ldy #>sfx_pickup3
-               ldx #14
                jsr sfxplay
                rts
                
-                
-
-               ;Remove sweets from top left
-remove_object   lda #void
-                sta (zp+1),y
-                iny
-                lda #void
-                sta (zp+1),y
-                tya
-                clc
-                adc #$28
-                tay
-                lda #void
-                sta (zp+1),y
-                dey
-                lda #void
-                sta (zp+1),y
-                rts
-               
-                ;Player gets killed
-
-playerhit       lda #0
-                sta playerdeathdelay
-                sta playerdeathpointer
-                lda #1
-                sta playerisdead
-                lda #<sfx_dead
-               ldy #>sfx_dead
-               ldx #14
+;Bomb sfx 
+playbombsfx    ldx #14
+               lda #<sfx_bomb
+               ldy #>sfx_bomb 
                jsr sfxplay
-                rts
-                
-                ;Smart bomb was activated, 
-                ;clear the entire play area
-                
+               rts
+               
+;---------------------------------------------------        
+               
 clearplayarea   
         ldx #$00
 copymap lda map,x
@@ -229,3 +335,12 @@ copymap lda map,x
         inx
         bne copymap               
         rts  
+
+testshieldenable        
+        lda shieldtimer
+        beq rebootshield
+        rts
+rebootshield
+        lda #50
+        sta shieldtimer
+        rts

@@ -35,6 +35,9 @@ startnewgame
         sta $dc0d
         sta $dd0d
         
+        ldx $fb
+        txs
+        
         ;Reset firebutton properties and 
         ;speed skill
 
@@ -42,14 +45,25 @@ startnewgame
         sta firebutton
         sta playerspeed
         sta dirdelay
+        sta shielddelay
+        sta shieldpointer
+        sta shieldtimer
 
         lda #0
         sta spawnsweettimer
         sta playerdirset
-        
+        sta animpointer 
+        sta animdelay
+        sta playerisdead
+        lda #$c0
+        sta playeranimtype
         jsr randomizer
         jsr randomizer
        
+        ;Init exploder
+        ldx #10
+        stx explodepointer
+        
         ;Reset spawn time expiry
         lda #100
         sta spawntimeexpiry
@@ -57,8 +71,6 @@ startnewgame
         lda #0
         sta leveltimer
         sta leveltimer+1
-        
-        
         
         ;Init SID chip
 
@@ -94,10 +106,6 @@ silence lda #0
         lda #200
         sta playerwaittime
         
-        ;Ensure player is alive
-        lda #0
-        sta playerisdead
-        
         ;Set amount of lives the player has to 3
         lda #3
         sta lives
@@ -128,50 +136,6 @@ drawmap lda map,x
         inx
         bne drawmap 
         
-;---------------------------------------
-;Setup the player sprite properties and
-;other default game settings
-;---------------------------------------
-
-        ;Player X position 
-        lda #$56
-        sta objpos
-        
-        ;Spin indicator X position
-        sta objpos+2
-
-        ;Player Y position
-        lda #$84
-        sta objpos+1
-        
-        ;Spin indicator Y position
-        lda #$de
-        sta objpos+3
-
-        ;Init player speed
-        lda #0
-        sta playerspeed
-
-        ;Spinner sprite
-        lda #$c0
-        sta $07f8
-        
-        ;Spinner indicator 
-        lda #$d8
-        sta $07f9
-        
-        lda #$ff
-        sta $d015
-        sta $d01c
-        
-        lda #$07
-        sta $d025
-        lda #$0a
-        sta $d026
-        lda #$02
-        sta $d027
-        lda #6
-        sta $d028
         
         lda #0
         sta playerreleased
@@ -212,6 +176,34 @@ scloop  lda #$30
         ;Initialise lives indicator
         jsr livesindicator
         
+        
+;---------------------------------------
+;Setup the player sprite properties and
+;other default game settings
+;---------------------------------------
+
+ 
+        lda #$ff
+        sta $d015
+        sta $d01c
+        ldx #$00
+zerospriteframes
+        lda #$ff
+        sta $07f8,x
+        lda #$02
+        sta $d027,x
+        inx
+        cpx #8
+        bne zerospriteframes
+        lda #$07
+        sta $d025
+        lda #$0a
+        sta $d026
+        
+        jmp getready ;Jump directly to the GET READY screen
+        
+setupgame 
+        
         ;Jump to main game loop
         jmp gameloop
 
@@ -249,7 +241,60 @@ resetntsc
         lda #0
         sta ntsctimer
         rts
+        
+;Setup the main game code - init all sprites,
+;then position the player and the dial        
+        
+setupgamecode
+  
+        ldx #$00
+removeallsprites
+        lda #$00
+        sta objpos,x
+        inx
+        cpx #$10
+        bne removeallsprites
+        jsr expandspritearea
+        
+        lda #$c0
+        sta $07f8
+        lda #$d8
+        sta $07f9
+           ;Player X position 
+        lda #$56
+        sta objpos
+        
+        ;Spin indicator X position
+        sta objpos+2
 
+        ;Player Y position
+        lda #$84
+        sta objpos+1
+        
+        ;Spin indicator Y position
+        lda #$de
+        sta objpos+3
+
+        ;Init player speed
+        lda #0
+        sta playerspeed
+
+        ;Spinner sprite
+        lda #$c0
+        sta $07f8
+        
+        ;Spinner indicator 
+        lda #$d8
+        sta $07f9
+        
+        lda #6
+        sta $d028
+        
+        lda #1 ;Setup in game music
+        
+        jsr musicinit
+        jsr expandspritearea
+        
 ;-----------------------------------------
 ;Main game loop
 ;-----------------------------------------
@@ -271,9 +316,6 @@ gameloop
         ;Expand sprite MSB position
         jsr expandspritearea
         
-        ;Animate the player's spinner
-        jsr animplayer
-
         ;Player controller (using fire button)
         ;and player movement
         jsr playercontrol
@@ -287,6 +329,7 @@ gameloop
         ;Level control 
         
         jsr levelcontrol
+        jsr screenexploder
         jmp gameloop
 
 ;-----------------------------------------
@@ -309,46 +352,6 @@ xloop   lda objpos+1,x
         cpx #$10
         bne xloop
         rts
-
-;-----------------------------------------
-;Animate the player sprites and also 
-;movement
-;-----------------------------------------
-animplayer
-        ;Call rotation subroutine
-        ;and also make a delayed animation
-        ;before switching to the next frame
-
-        jsr rotatespinner
-        lda animdelay
-        cmp #1
-        beq animdelayok
-        inc animdelay
-        rts
-
-        ;Reset delayed animation and switch
-        ;to the next sprite frame
-
-animdelayok
-        lda #0
-        sta animdelay
-        ldx animpointer
-        lda playerframe,x
-        sta playertype
-        inx
-        cpx #4 ;The spinner has 4 frames
-        beq resetanim
-        inc animpointer
-        rts
-
-        ;4th frame reached, reset animation
-        ;for spinner sprite
-
-resetanim
-        ldx #0
-        stx animpointer
-        rts
-
 
 
 ;-----------------------------------------------
@@ -437,10 +440,12 @@ objmod4
 plotstore4
         sta $0429
         
+        
+        
         ;Once again, refresh the game attributes so all objects
         ;that have been spawned are the correct objects 
         ;that appear on screen.
-        
+repaint        
         ldx #$00
 recolour
         ldy screen,x
@@ -679,11 +684,83 @@ spawnnomore
           rts 
           
           
+;----------------------------------------------
+;Get ready screen - Setup sprites on the main
+;game board
+;----------------------------------------------
+
+getready  
           
-          
-          
-         
+          ldx #$00
+setupgrsprites
+          lda getreadytable,x
+          sta $07f8,x
+          lda #$02
+          sta $d027,x
+          inx
+          cpx #8
+          bne setupgrsprites
         
+          ldx #$00
+putgrposition
+          lda getreadypos,x
+          sta objpos,x
+          inx
+          cpx #$10
+          bne putgrposition
+          lda #0
+          sta firebutton
+          ;Synchonise loop 
+          
+          lda #3 ;Play Get Ready jingle 
+          jsr musicinit
+          
+getreadyloop          
+          lda #0
+          cmp rt
+          beq *-3
+          jsr expandspritearea
+          lda $dc00
+          lsr
+          lsr
+          lsr
+          lsr
+          lsr
+          bit firebutton
+          ror firebutton
+          bmi getreadyloop
+          bvc getreadyloop
+          lda #0
+          sta firebutton
+          lda #250
+          sta shieldtimer
+          jmp setupgamecode
+          
+;----------------------------------------------
+;Screen explosion routine
+screenexploder
+         
+          lda explodedelay
+          cmp #1
+          beq doexplosion
+          inc explodedelay
+          rts
+doexplosion 
+          lda #0
+          sta explodedelay
+          ldx explodepointer
+          lda explodecolourtable,x
+          
+          sta $d021
+          inx
+          cpx #11
+          beq endexplode
+          inc explodepointer
+          rts
+endexplode
+          ldx #10
+          stx explodepointer
+          rts
 ;----------------------------------------------
 
         ;Include source code for player control

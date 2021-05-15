@@ -18,6 +18,10 @@ playercontrol
         lda playerisdead
         cmp #1
         bne playerisalive
+        
+        ;The player is dead, so destroy 
+        ;the spinner
+        
         lda playerdeathdelay
         cmp #$04
         beq deathanimok
@@ -40,7 +44,7 @@ checkrespawn
         sta playerdeathpointer
         sta playerdeathdelay
         
-        ;Check how many lives the player has
+        ;Deduct a life from the lives counter
         
         dec lives
         
@@ -52,32 +56,37 @@ checkrespawn
         lda lives     ;0 lives = game over
         beq callgameover
         
-        
-        ;Clear screen once again 
+        ;Clear screen area
         
         jsr clearplayarea
         
-        ;Else all lives are not lost, so respawn
-        ;the player and default the direction it
-        ;can move.
+        ;Spawn the player to its default positiion
         
         lda #$54
         sta objpos
         lda #$84
         sta objpos+1
         
-        ;Disable player moving
+        ;Disable player moving and init all 
+        ;colour flash/shield pointers
         
         lda #0
         sta playerismoving
         sta playerreleased
         sta playerdirset
         sta playerisdead
+        lda #200
+        sta shieldtimer
+        lda #0
+        sta shieldpointer
+        sta shielddelay
         
         ;Reset player waiting time
         lda #200
         sta playerwaittime
         rts
+        
+        ;All lives are lost, run game over 
         
 callgameover
         jmp gameover
@@ -93,9 +102,11 @@ playerisalive
         
         jsr spritetochar 
         jsr autotimer ;If the player is idle, wait a few seconds then launch
-        lda playertype
-        sta $07f8
-
+        jsr rotatespinner
+        jsr animplayer
+        jsr testshield
+        lda playeranimtype
+       
         lda playerreleased
         cmp #1
         beq controlmovement
@@ -239,9 +250,9 @@ moveupleft     jsr uplogic
 uplogic         lda objpos+1
                 sec
                 sbc #2
-                cmp #$3a
+                cmp #player_up_stop_position
                 bcs storeup
-                lda #$3a
+                lda #player_up_stop_position
 storeup         sta objpos+1
                 rts
 
@@ -249,9 +260,9 @@ storeup         sta objpos+1
 downlogic       lda objpos+1
                 clc
                 adc #2
-                cmp #$e2
+                cmp #player_down_stop_position
                 bcc storedown
-                lda #$e2
+                lda #player_down_stop_position
 storedown       sta objpos+1
                 rts
 
@@ -259,9 +270,9 @@ storedown       sta objpos+1
 leftlogic       lda objpos
                 sec
                 sbc #1
-                cmp #$10
+                cmp #player_left_stop_position
                 bcs storeleft
-                lda #$10
+                lda #player_left_stop_position
 storeleft       sta objpos
                 rts
 
@@ -269,9 +280,9 @@ storeleft       sta objpos
 rightlogic      lda objpos
                 clc
                 adc #1
-                cmp #$9e
+                cmp #player_right_stop_position
                 bcc storeright
-                lda #$9e
+                lda #player_right_stop_position
 storeright      sta objpos
                 rts
                 
@@ -381,9 +392,19 @@ jleft   lda #4
         
 jright  lda #8
         bit $dc00
-        bne nojoy
+        bne nojoy2
         jmp dialanticlockwise
-nojoy        
+nojoy2
+        lda #4
+        bit $dc01
+        bne jright2
+        jmp dialclockwise
+        
+jright2 lda #8
+        bit $dc01
+        bne nojoycontrol
+        jmp dialanticlockwise
+nojoycontrol        
         rts 
         
 dialclockwise
@@ -420,7 +441,48 @@ updatedial
 resetdial2
         lda #$07
         sta dirpointer
+        lda directionstore
+        clc
+        adc #$d8
+        sta $07f9
+        
         rts
+;-----------------------------------------
+;Animate the player sprites and also 
+;movement
+;-----------------------------------------
+animplayer
+        ;Call rotation subroutine
+        ;and also make a delayed animation
+        ;before switching to the next frame
+
+      
+        lda animdelay
+        cmp #1
+        beq animdelayok
+        inc animdelay
+        rts
+
+        ;Reset delayed animation and switch
+        ;to the next sprite frame
+
+animdelayok
+        lda #0
+        sta animdelay
+        ldx animpointer
+        lda animtable,x
+        sta $07f8
+        inx
+        cpx #4 ;The spinner has 4 frames
+        beq resetanim
+        inc animpointer
+        rts
+resetanim
+        ldx #0
+        stx animpointer
+        rts
+
+
         
 ;---------------------------------------------
 ;Game over routine 
@@ -428,7 +490,87 @@ resetdial2
 gameover 
         lda #2
         jsr musicinit
-        inc $d020
-        jmp *-3
+           ldx #$00
+setupgosprites
+          lda gameovertable,x
+          sta $07f8,x
+          lda #$02
+          sta $d027,x
+          inx
+          cpx #8
+          bne setupgosprites
         
+          ldx #$00
+putgoposition
+          lda gameoverpos,x
+          sta objpos,x
+          inx
+          cpx #$10
+          bne putgoposition
+          lda #0
+          sta firebutton
+
+;Wait for fire to be pressed before running 
+;new front end 
+
+goloop    lda #0
+          sta rt
+          cmp rt
+          beq *-3
+          jsr expandspritearea
+          jsr screenexploder
+          lda $dc00
+          lsr
+          lsr
+          lsr
+          lsr
+          lsr
+          bit firebutton
+          ror firebutton
+          bmi goloop
+          bvc goloop
+          jmp titlecode
+
+;---------------------------------------------------------
+
+;Test shield ... The shield is only active if the 
+;value of the shield is above 0 
+
+testshield
+          lda shieldtimer ;Shieldtimer as 0 = shieldout
+          beq shieldout
+          jsr flashshield
+          dec shieldtimer
+          rts
+shieldout
+          lda #2          ;Default spinner to red
+          sta $d027       
+          lda #0
+          sta shieldtimer
+          rts 
+          
+;Flash shield red scheme
+
+flashshield
+          lda shielddelay
+          cmp #$02
+          beq doflashnow
+          inc shielddelay
+          rts
+doflashnow
+          lda #0
+          sta shielddelay
+          ldx shieldpointer
+          lda shieldcolourtable,x
+          sta $d027
+          inx
+          cpx #8
+          beq loopflash
+          inc shieldpointer
+          rts
+loopflash ldx #0
+          stx shieldpointer
+          rts
+          
+          
                 

@@ -56,24 +56,12 @@ heart = 165 ; Lives indicator
 
 gamecharmemory = $2000
 
+;Player stop position 
 
-
-;Spikes chars
-spikes1 = 38
-spikes2 = 39
-spikes3 = 54
-spikes4 = 55
-spikes5 = 56
-spikes6 = 57
-spikes7 = 58
-spikes8 = 59
-spikes9 = 60
-spikes10 = 61
-spikes11 = 62
-spikes12 = 63 
-spikes14 = 64
-spikes15 = 65
-
+player_up_stop_position = $50
+player_down_stop_position = $be
+player_left_stop_position = $1c
+player_right_stop_position = $90
 
 ;Collision pointers 
 zp = $02

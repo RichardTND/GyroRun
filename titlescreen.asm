@@ -21,6 +21,17 @@ titlecode
         sta $d01a
         sta $d019
         sta $d015
+        sta $d011
+        
+;Quick delay routine
+
+        ldx #$00
+wait01  ldy #$00
+wait02  iny
+        bne wait02
+        inx
+        bne wait01
+        
         
         ;Silence sid chip
 
@@ -467,24 +478,22 @@ textline6
 ;Title screen scroll text
 
 scrolltext
-        !text "    ... hello there and welcome to gyro-run ...   "
-        !text "programming and font by richard bayliss ...   loading "
-        !text "screen, front end logo and game graphics by hugues (ax!s)"
-        !text " poisseroux ...   music and sound effects by richard bayliss ...   "
-        !text "copyright (c) 2021 the new dimension ...   written for the csdb "
-        !text "fun compo 2021 ...   how to play: control: joystick port 2 ...   "
-        !text "use left/right in game to turn the dial at the bottom "
-        !text "of the screen ...   then press fire to launch your "
-        !text "spinner to that direction ...   warning: the spinner will move automatically if idle for some time ...   "
-        !text "the object of the game is to pick up the sweets for points ...   "
-        !text "each type of sweet will have a score value added once picked up by your spinner ...   "
-        !text "pick up bombs to clear the game area you will get only 100 points awarded...   "
-        !text "it is possible for the objects to transform into some other "
-        !text "object ...   watch out for the deadly skulls or the spikes on the "
-        !text "walls ...   if your spinner bumps into those, you will lose a life ...   "
-        !text "there are 3 lives in total ...   the game is over as soon as "
-        !text "all 3 lives have been lost ...   keep on scoring as many points "
-        !text "as you possibly can, and try to make it onto the hi score table ...   "
-        !text "good luck ...   presss fire or space to play ...                      "
-        
-        !byte 0 ;Reset scroll text marker
+        !text "    >>> gyro-run <<< ...    copyright (c) 2021 the new dimension ...   "
+        !text "programming, charset and sonix by richard bayliss ...   bitmap loader, "
+        !text "logo and game graphics by hugues (ax!s) poisseroux ...   written for "
+        !text "the csdb fun compo 2021 ...   use a joystick in any port ...   "
+        !text "during game play use left/right to turn the arrow dial clockwise/anti-clockwise ...   "
+        !text "press fire to change direction of your spinner ...   "
+        !text "objects will appear onto the screen at random ...   pick up "
+        !text "sweet treats for extra points ...   scores are: lollipops 200 points, "
+        !text "waffles 300 points ...   ice cream desserts 500 points ...    "
+        !text "if you collect any of these objects you will also get a shield but only "
+        !text "for a short time ...   pickup bombs to clear the screen and get 100 points ...   "
+        !text "warning, this will also remove your shield ...   avoid the skulls, they will kill you if your "
+        !text "shield runs out and you land on them ...   at times during play, it is possible that objects "
+        !text "can change into different objects ...    the longer you progres, the more "
+        !text "rapid objects will appear a siren will go off to warn about this ...   keep on scoring points until you "
+        !text "have lost all of your lives ...   also try to make it to the top "
+        !text "onto the hi score table if you can ...   have fun and press space bar or fire to play ...   "
+        !text "                                "
+        !byte 0
