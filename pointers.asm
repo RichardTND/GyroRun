@@ -7,7 +7,7 @@
 
 ;General pointers
 
-
+!align $ff,0
 system  !byte 0
 ntsctimer !byte 0
 rt      !byte 0
@@ -23,7 +23,7 @@ playerreleased !byte 0
 playerdirset !byte 0
 playerismoving !byte 0
 playerspeed !byte 0
-playerspeedskill !byte 2
+playerspeedskill !byte 1
 playeranimtype !byte $c0
 ;Player death pointers
 playerisdead !byte 0
@@ -98,17 +98,17 @@ explodecolourtable
 ;Object table that has to spawn to screen
 
 obj_top_left_table 
-            !byte sweet_top_left, sweet2_top_left, sweet3_top_left, sweet_top_left
-            !byte sweet2_top_left, sweet3_top_left, bomb_top_left, skull_top_left 
+            !byte sweet_top_left, sweet2_top_left, sweet3_top_left, skull_top_left
+            !byte sweet2_top_left, sweet_top_left,sweet3_top_left, skull_top_left 
 obj_top_right_table 
-            !byte sweet_top_right, sweet2_top_right, sweet3_top_right, sweet_top_right
-            !byte sweet2_top_right, sweet3_top_right, bomb_top_right, skull_top_right 
+            !byte sweet_top_right, sweet2_top_right, sweet3_top_right, skull_top_right
+            !byte sweet2_top_right, sweet_top_right, sweet3_top_right, skull_top_right 
 obj_bottom_left_table 
-            !byte sweet_bottom_left, sweet2_bottom_left, sweet3_bottom_left, sweet_bottom_left 
-            !byte sweet2_bottom_left, sweet3_bottom_left, bomb_bottom_left, skull_bottom_left
+            !byte sweet_bottom_left, sweet2_bottom_left, sweet3_bottom_left, skull_bottom_left 
+            !byte sweet2_bottom_left, sweet_bottom_left, sweet3_bottom_left, skull_bottom_left
 obj_bottom_right_table 
-            !byte sweet_bottom_right, sweet2_bottom_right, sweet3_bottom_right, sweet_bottom_right 
-            !byte sweet2_bottom_right, sweet3_bottom_right, bomb_bottom_right, skull_bottom_right
+            !byte sweet_bottom_right, sweet2_bottom_right, sweet3_bottom_right, skull_bottom_right 
+            !byte sweet2_bottom_right, sweet_bottom_right, sweet3_bottom_right, skull_bottom_right
             
 
 ;Player score
@@ -117,7 +117,7 @@ score       !byte $30,$30,$30,$30,$30,$30
 ;Possible screen low/hi!byte table for randomizer to develop 
 ;new
 
-!align $100,0
+!align $ff,0
 
 char_read_lo 
  !byte $a4,$a6,$a8,$aa,$ac,$ae,$b0,$b2,$b4,$b6,$b8,$ba,$bc,$be,$c0,$c2
@@ -255,5 +255,3 @@ sfx_levelup    !byte $0E,$EE,$88,$BC,$41,$c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7
                 !byte $b4,$b3,$b2,$b1,$b9
                 !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
                 !byte $b4,$b3,$b2,$b1,$b9,$90,$10,0
-
-sfx_spawn       !byte $0E,$EE,$88,$df,$81,$ad,$41,$ac,$ab,$aa,$a8,0

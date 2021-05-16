@@ -439,7 +439,7 @@ updatedial
         rts                
         
 resetdial2
-        lda #$07
+        lda #$08
         sta dirpointer
         lda directionstore
         clc
@@ -519,7 +519,21 @@ goloop    lda #0
           beq *-3
           jsr expandspritearea
           jsr screenexploder
+          
+          ;Background animation
+          jsr animbackground
           lda $dc00
+          lsr
+          lsr
+          lsr
+          lsr
+          lsr
+          bit firebutton
+          ror firebutton
+          bmi goloop2
+          bvc goloop2
+          jmp hiscorecheck
+goloop2   lda $dc01
           lsr
           lsr
           lsr
@@ -529,7 +543,7 @@ goloop    lda #0
           ror firebutton
           bmi goloop
           bvc goloop
-          jmp titlecode
+          jmp hiscorecheck
 
 ;---------------------------------------------------------
 

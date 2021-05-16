@@ -147,7 +147,7 @@ remove_sweet2_top_left
               jsr remove_top_left
 sweet2main    jsr score300
               jsr shieldboostcheck
-              jsr playpickupsfx
+              jsr playpickup2sfx
               rts
 remove_sweet2_top_right
               jsr remove_top_right

@@ -5,12 +5,39 @@
 ;       (C) 2021 The New Dimension
 ;=======================================
         *=$4000
+        
+;Backup charset for use with the hi score
+;name entry routine.
+
+        ldx #$00
+backupchar
+        lda $2400,x
+        sta $0800,x
+        lda $2500,x
+        sta $0900,x
+        lda $2600,x
+        sta $0a00,x
+        lda $2600,x
+        sta $0b00,x
+        inx
+        bne backupchar
+        ldx #$00
+makespacechar
+        lda #$00
+        sta $0800+(32*8),x
+        inx
+        cpx #8
+        bne makespacechar
 
 ;Main game code
-
+        lda #8
+        jsr $ffd2
+        lda #252
+        sta 808
         lda $02a6
         sta system
         jsr plotsweets
+        jsr loadhiscore
         jmp titlecode
 ;---------------------------------------
 ;The player starts a fresh new game. 
@@ -35,8 +62,7 @@ startnewgame
         sta $dc0d
         sta $dd0d
         
-        ldx $fb
-        txs
+       
         
         ;Reset firebutton properties and 
         ;speed skill
@@ -155,7 +181,8 @@ scloop  lda #$30
 ;---------------------------------------
 ;Setup the IRQ Raster interrupt player
 ;---------------------------------------
-
+        lda $fb
+        txs
         ldx #<gameirq
         ldy #>gameirq
         stx $0314
@@ -218,6 +245,7 @@ gameirq
         sta $dd0d
         lda #$f8
         sta $d012
+        
         lda #1
         sta rt
         jsr musicplayer
@@ -674,15 +702,28 @@ levelup   lda #0
           sbc #10
           sta spawntimeexpiry
           
+spawnnomore
+          jsr spawnbomb       ;For a bonus spawn a bomb
           lda #0 
           sta spawnsweettimer
           lda #<sfx_levelup
           ldy #>sfx_levelup
           ldx #14
           jsr sfxplay
-spawnnomore
           rts 
           
+spawnbomb
+        
+        lda #bomb_top_left
+        sta objmod1+1
+        lda #bomb_top_right
+        sta objmod2+1
+        lda #bomb_bottom_left
+        sta objmod3+1
+        lda #bomb_bottom_right
+        sta objmod4+1          
+        jsr objmod1
+        rts
           
 ;----------------------------------------------
 ;Get ready screen - Setup sprites on the main
@@ -717,9 +758,14 @@ putgrposition
           
 getreadyloop          
           lda #0
+          sta rt
           cmp rt
           beq *-3
           jsr expandspritearea
+          
+          ;Background animation
+          jsr animbackground
+          
           lda $dc00
           lsr
           lsr
@@ -766,6 +812,10 @@ endexplode
         ;Include source code for player control
         !source "player.asm"        
 
+;----------------------------------------------
+!align $ff,0
+        ;Include source code for hi score 
+        !source "hiscore.asm"
 ;----------------------------------------------
         
         ;Include source code for pointers

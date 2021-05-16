@@ -65,3 +65,20 @@ player_right_stop_position = $90
 
 ;Collision pointers 
 zp = $02
+
+
+;Hi score variables
+
+scorelen = 6
+listlen = 10
+namelen = 9
+storbyt = $02
+
+hitemp1 = $05
+hitemp2 = $06
+hitemp3 = $07
+hitemp4 = $08
+nmtemp1 = $09
+nmtemp2 = $0a
+nmtemp3 = $0b
+nmtemp4 = $0c

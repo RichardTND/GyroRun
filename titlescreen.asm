@@ -6,10 +6,11 @@
 ;=======================================
 
 titlecode
-
+TitleScreen
 ;Destroy all IRQ raster interrupts
 
         sei
+       
         ldx #$31
         ldy #$ea
         lda #$81
@@ -22,6 +23,13 @@ titlecode
         sta $d019
         sta $d015
         sta $d011
+        ldx #$00
+silent  lda #$00
+        sta $d400,x
+        inx
+        cpx #$18
+        bne silent
+        
         
 ;Quick delay routine
 
@@ -458,23 +466,36 @@ scrloop8
         inc messread+2
 scrloop9
         jmp exitscroll
+!align $ff,0
         
 ;High score list
         !ct scr
 textline1
         !text "       >>> todays best spinners <<<     "
 textline2
-        !text "       1. richard   ........ 010000     "
+        !text "       1. "
+hiscorestart        
+name1 !text "richard   ........ "
+hiscore1 !text "010000     "
 textline3
-        !text "       2. hugues    ........ 007500     "
+        !text "       2. "
+name2 !text "hugues    ........ "
+hiscore2 !text "007500     "
 textline4
-        !text "       3. arthur    ........ 005000     "
+        !text "       3. "
+name3 !text "martin    ........ "
+hiscore3     !text "005000     "
 textline5
-        !text "       4. tnd       ........ 002500     "
+        !text "       4. "
+name4 !text "tnd       ........ "
+hiscore4     !text "002500     "
+
 textline6          
-        !text "       5. games     ........ 000000     "
-
-
+        !text "       5. "
+name5 !text "games     ........ "
+hiscore5     !text "000000     "
+hiscoreend
+!align $ff,0
 ;Title screen scroll text
 
 scrolltext
@@ -494,6 +515,8 @@ scrolltext
         !text "can change into different objects ...    the longer you progres, the more "
         !text "rapid objects will appear a siren will go off to warn about this ...   keep on scoring points until you "
         !text "have lost all of your lives ...   also try to make it to the top "
-        !text "onto the hi score table if you can ...   have fun and press space bar or fire to play ...   "
+        !text "onto the hi score table if you can ...   "
+        !text "press space bar or fire in any joystick port to play ...                             "
         !text "                                "
         !byte 0
+!align $100,0        
