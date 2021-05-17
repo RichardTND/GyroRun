@@ -69,11 +69,12 @@ checkrespawn
         
         ;Disable player moving and init all 
         ;colour flash/shield pointers
-        
+        lda #1
+        sta playerdirset
         lda #0
         sta playerismoving
         sta playerreleased
-        sta playerdirset
+        
         sta playerisdead
         lda #200
         sta shieldtimer
@@ -180,28 +181,28 @@ playeroktomovenow
                sta playerspeed
                 
                lda playerdirset
-               cmp #0
+               cmp #1
                bne notup
                jmp moveup
-notup          cmp #1
+notup          cmp #2
                bne notupright
                jmp moveupright
-notupright     cmp #2
+notupright     cmp #3
                bne notright 
                jmp moveright
-notright       cmp #3
+notright       cmp #4
                bne notdownright
                jmp movedownright
-notdownright   cmp #4
+notdownright   cmp #5
                bne notdown
                jmp movedown
-notdown        cmp #5
+notdown        cmp #6
                bne notdownleft
                jmp movedownleft
-notdownleft    cmp #6
+notdownleft    cmp #7
                bne notleft 
                jmp moveleft 
-notleft        cmp #7
+notleft        cmp #8
                bne notupleft
                jmp moveupleft
 notupleft      rts
@@ -252,6 +253,7 @@ uplogic         lda objpos+1
                 sbc #2
                 cmp #player_up_stop_position
                 bcs storeup
+                
                 lda #player_up_stop_position
 storeup         sta objpos+1
                 rts
@@ -304,6 +306,7 @@ idlenomore      lda #0
                 ;Force player to move
                 
                 lda #1
+                sta playerdir
                 sta playerreleased
                 sta playerismoving
                 rts
@@ -334,7 +337,7 @@ show3lives      lda #heart
 ;Show 2 lives on the screen indicator (black out the last
 ;heart)   
              
-show2lives      lda #space
+show2lives      lda #$a0
                 sta screen+960+39
                 lda #heart
                 sta screen+960+38
@@ -345,14 +348,14 @@ show2lives      lda #space
 
 show1lives      lda #heart
                 sta screen+960+39
-                lda #space
+                lda #$a0
                 sta screen+960+38
                 sta screen+960+37
                 rts
                 
 ;Show 0 lives on screen indicator 
 
-show0lives      lda #space
+show0lives      lda #$a0
                 sta screen+960+39
                 sta screen+960+38
                 sta screen+960+37
@@ -410,43 +413,37 @@ nojoycontrol
 dialclockwise
         inc dirpointer 
         lda dirpointer 
-        cmp #8
+        cmp #9
         beq resetdial
         sta dirpointer
         jmp updatedial
 resetdial
-        lda #0
+        lda #1
         sta dirpointer
         jmp updatedial
         
 dialanticlockwise        
         
-        dec dirpointer
+       
         lda dirpointer
-        cmp #$ff
+        cmp #1
         beq resetdial2 
-        sta dirpointer
+        dec dirpointer
+        
         
         
 updatedial
         lda dirpointer
         sta directionstore
         clc
-        adc #$d8
+        adc #$d7
         sta $07f9
-        
-        
         rts                
         
 resetdial2
         lda #$08
         sta dirpointer
-        lda directionstore
-        clc
-        adc #$d8
-        sta $07f9
-        
-        rts
+        jmp updatedial
 ;-----------------------------------------
 ;Animate the player sprites and also 
 ;movement

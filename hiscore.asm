@@ -5,21 +5,6 @@
 ;       (C) 2021 The New Dimension
 ;=======================================
 
-;Hi score variables
-
-scorelen = 6
-listlen = 10
-namelen = 9
-storbyt = $02
-
-hitemp1 = $c1
-hitemp2 = $c2
-hitemp3 = $c3
-hitemp4 = $c4
-nmtemp1 = $d1
-nmtemp2 = $d2
-nmtemp3 = $d3
-nmtemp4 = $d4
 ;----------------------------------------
 ;Disable all IRQ registers and init the
 ;SID chip. Refresh keypress, so that no
@@ -41,9 +26,6 @@ hiscorecheck
            sta $d01a
            sta $d019
            
-           
-            
-            
             ;Convert score to final score
             
             ldx #$00
@@ -72,103 +54,192 @@ convsc      lda score,x
             sta $d021
             sta $d015
          
-         ;Grab player's score and put
-;into zeropages 
+;WARNING !!!
+  
+;Unoptimized version of hi score check routine. There 
+;was a more compact version of the hi-score check 
+;routine, but it messes up the pointers inside the 
+;main music. So I decided to use the unoptimized
+;approach. It generates awfully long code for checking
+;and moving score / name rank to correct position but 
+;the routine does work.
 
-     ldx #$00
-nextone  lda hslo,x
-     sta hitemp1 
-     lda hshi,x
-     sta hitemp2 
-     
-;Check hiscores
+;Generate macro for checking score with hi score data 
 
-     ldy #$00
-scoreget lda finalscore,y 
-scorecmp cmp (hitemp1),y 
-     bcc posdown 
-     beq nextdigit 
-     bcs posfound
-nextdigit    
-     iny
-     cpy #scorelen 
-     bne scoreget 
-     beq posfound 
-posdown  inx 
-     cpx #listlen
-     bne nextone 
-     beq nohiscor
-posfound stx storbyt
-     cpx #listlen-1
-     beq lastscor 
-     
-;Move hiscores and ranks down 
+!macro checkhiscorepos _hiscore {
+  
+            lda finalscore
+            sec
+            lda _hiscore+5
+            sbc finalscore+5
+            lda _hiscore+4
+            sbc finalscore+4
+            lda _hiscore+3
+            sbc finalscore+3
+            lda _hiscore+2
+            sbc finalscore+2
+            lda _hiscore+1
+            sbc finalscore+1
+            lda _hiscore
+            sbc finalscore
+}
+          
+;Also macro for moving scores and names 
 
-    ldx #listlen-1 
-copynext 
-    lda hslo,x
-    sta hitemp1 
-    lda hshi,x 
-    sta hitemp2 
-    lda nmlo,x
-    sta nmtemp1 
-    lda nmhi,x 
-    sta nmtemp2 
-    dex
-    lda hslo,x
-    sta hitemp3 
-    lda hshi,x 
-    sta hitemp4 
-    lda nmlo,x
-    sta nmtemp3 
-    lda nmhi,x
-    sta nmtemp4 
-    
-    ldy #scorelen-1
-copyscor
-    lda (hitemp3),y 
-    sta (hitemp1),y 
-    dey 
-    bpl copyscor 
-    
-    ldy #namelen+1
-copyname 
-    lda (nmtemp3),y 
-    sta (nmtemp1),y 
-    dey 
-    bpl copyname 
-    cpx storbyt 
-    bne copynext 
-    
-lastscor 
-    ldx storbyt 
-    lda hslo,x
-    sta hitemp1 
-    lda hshi,x
-    sta hitemp2 
-    lda nmlo,x
-    sta nmtemp1 
-    lda nmhi,x
-    sta nmtemp2 
-    
-    jmp nameentry 
-    
-placenewscore
-    ldy #scorelen-1 
-putscore
-    lda finalscore,y 
-    sta (hitemp1),y 
-    dey 
-    bpl putscore 
-    ldy #namelen-1 
-putname lda name,y 
-    sta (nmtemp1),y 
-    dey 
-    bpl putname 
-    jsr mainsave
-nohiscor    
-    jmp titlecode
+!macro moverank rank_source, rank_target {
+  
+            lda rank_source,x
+            sta rank_target,x
+            
+}
+;----------------------------------------------------------------
+;Check for first place position 
+;----------------------------------------------------------------
+            +checkhiscorepos hiscore1 ;<- call macro rountine for
+            bpl not_first_place       ;   scrore checking
+            jsr nameentry
+            
+            ;Move ranks (hiscores)
+            ldx #$00
+movescores1 +moverank hiscore4, hiscore5 
+            +moverank hiscore3, hiscore4
+            +moverank hiscore2, hiscore3 
+            +moverank hiscore1, hiscore2 
+            +moverank finalscore, hiscore1
+            inx
+            cpx #6
+            bne movescores1
+            
+            ;Move ranks (names)
+            ldx #$00
+movenames1  +moverank name4, name5
+            +moverank name3, name4
+            +moverank name2, name3
+            +moverank name1, name2
+            +moverank name, name1
+            inx
+            cpx #9
+            bne movenames1
+            
+            jmp exitandsavehiscores
 
+not_first_place
+
+;----------------------------------------------------------------
+;Check for second place position 
+;----------------------------------------------------------------
+            
+            +checkhiscorepos hiscore2
+            bpl not_second_place
+            jsr nameentry
+            
+            ;Move score and name to second rank 
+            
+            ldx #$00
+movescores2 +moverank hiscore4, hiscore5
+            +moverank hiscore3, hiscore4
+            +moverank hiscore2, hiscore3
+            +moverank finalscore, hiscore2
+            inx
+            cpx #6
+            bne movescores2
+            
+            ;Now move names to second place
+            
+            ldx #$00
+movenames2  +moverank name4, name5
+            +moverank name3, name4
+            +moverank name2, name3
+            +moverank name, name2
+            inx
+            cpx #9
+            bne movenames2
+            jmp exitandsavehiscores
+            
+not_second_place
+
+
+;----------------------------------------------------------------
+;Check for third place position 
+;----------------------------------------------------------------
+
+            +checkhiscorepos hiscore3
+            bpl not_third_place
+            jsr nameentry 
+            ldx #$00
+movescores3 +moverank hiscore4, hiscore5
+            +moverank hiscore3, hiscore4 
+            +moverank finalscore, hiscore3
+            inx
+            cpx #6
+            bne movescores3
+            
+            ldx #$00
+movenames3  +moverank name4, name5
+            +moverank name3, name4
+            +moverank name, name3
+            inx
+            cpx #9
+            bne movenames3
+            jmp exitandsavehiscores
+            
+not_third_place
+
+
+;----------------------------------------------------------------
+;Check for fourth place position 
+;----------------------------------------------------------------
+
+            +checkhiscorepos hiscore4
+            bpl not_fourth_place
+            jsr nameentry
+            
+            ldx #$00
+movescores4 +moverank hiscore4, hiscore5
+            +moverank finalscore, hiscore4
+            inx
+            cpx #6
+            bne movescores4
+            
+            ldx #$00
+movenames4  +moverank name4, name5
+            +moverank name, name4
+            inx
+            cpx #9
+            bne movenames4
+            jmp exitandsavehiscores
+            
+not_fourth_place
+
+;----------------------------------------------------------------
+;Check for last place position 
+;----------------------------------------------------------------
+      
+            +checkhiscorepos hiscore5
+            bpl no_hi_scores
+            jsr nameentry
+            ldx #$00
+movescores5 +moverank finalscore, hiscore5
+            inx
+            cpx #6
+            bne movescores5
+            
+            ldx #$00
+movenames5  +moverank name, name5
+            inx
+            cpx #9
+            bne movenames5
+              
+exitandsavehiscores
+            jmp mainsave
+            
+;----------------------------------------------------------------
+;No hiscore achieved, skip saving and jump to title screen
+;----------------------------------------------------------------
+
+no_hi_scores
+            jmp titlecode
+            
 ;----------------------------------------------
 ;Keyboard input based name entry routine
 ;----------------------------------------------
@@ -293,7 +364,7 @@ grabloop    lda $068e,x
             inx
             cpx #9
             bne grabloop
-            jmp placenewscore
+            rts
             
 ;----------------------------------------------------------
 
@@ -320,10 +391,3 @@ message4    !text "        please type in your name.       "
 name        !text "         "
 finalscore  !byte $30,$30,$30,$30,$30,$30
             
-
-;Hi score table pointers
-
-hslo !byte <hiscore1, <hiscore2, <hiscore3, <hiscore4, <hiscore5
-hshi !byte >hiscore1, >hiscore2, >hiscore3, >hiscore4, >hiscore5
-nmlo !byte <name1, <name2, <name3, <name4, <name5 
-nmhi !byte >name1, >name2, >name3, >name4, >name5

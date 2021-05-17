@@ -64,7 +64,7 @@ player_left_stop_position = $1c
 player_right_stop_position = $90
 
 ;Collision pointers 
-zp = $02
+zp = $71
 
 
 ;Hi score variables

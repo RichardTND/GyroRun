@@ -77,10 +77,13 @@ startnewgame
 
         lda #0
         sta spawnsweettimer
-        sta playerdirset
+        
         sta animpointer 
         sta animdelay
         sta playerisdead
+        lda #1
+        sta playerdirset
+        
         lda #$c0
         sta playeranimtype
         jsr randomizer
@@ -556,34 +559,34 @@ slowok  lda #0
         sta voiddelay
        
         lda playerdirset
-        cmp #0
+        cmp #1
         bne notvoidup
         jmp scrollup
 notvoidup
-        cmp #1
+        cmp #2
         bne notvoidupright
         jmp scrollupright
 notvoidupright
-        cmp #2
+        cmp #3
         bne notvoidright
         jmp scrollright
 notvoidright
-        cmp #3
+        cmp #4
         bne notvoiddownright
         jmp scrolldownright
 notvoiddownright
-        cmp #4
+        cmp #5
         bne notvoiddown
         jmp scrolldown
-notvoiddown cmp #5
+notvoiddown cmp #6
         bne notvoiddownleft
         jmp scrolldownleft
 notvoiddownleft
-        cmp #6
+        cmp #7
         bne notvoidleft
         jmp scrollleft
 notvoidleft
-        cmp #7
+        cmp #8
         bne notvoidupleft
         jmp scrollupleft
 notvoidupleft
@@ -755,6 +758,8 @@ putgrposition
           
           lda #3 ;Play Get Ready jingle 
           jsr musicinit
+          lda #1
+          sta dirpointer
           
 getreadyloop          
           lda #0
