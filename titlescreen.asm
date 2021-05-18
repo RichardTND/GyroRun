@@ -63,6 +63,10 @@ clearscreentitle
         sta screen+$100,x
         sta screen+$200,x
         sta screen+$2e8,x
+        sta swingscreenstore,x
+        sta swingscreenstore+$100,x
+        sta swingscreenstore+$200,x
+       
         inx
         bne clearscreentitle
 
@@ -117,14 +121,21 @@ redscheme
         sta colour+760,x
         sta colour+920,x
         lda #$07 ;Rest - pink
-        
-        sta colour+800,x
-        sta colour+840,x
         sta colour+880,x
+        sta colour+800,x
+        lda #$01
+        sta colour+840,x
+        
         inx
         cpx #40
         bne redscheme
-
+        ldx #0
+blackout
+        lda #0
+        sta colour+320,x
+        inx
+        cpx #40
+        bne blackout
         ;Test (remove if ok)
         lda #$02
         sta $dd00
@@ -144,22 +155,24 @@ puttext
         lda textline1,x
         clc
         adc #_eorcode
-        sta screen+360,x
+        sta swingscreenstore+(1*swingbase)+12,x
+        lda #$a0
+        sta swingscreenstore+(2*swingbase)+12,x
         lda textline2,x
         adc #_eorcode
-        sta screen+440,x
+        sta swingscreenstore+(3*swingbase)+12,x
         lda textline3,x
         adc #_eorcode
-        sta screen+480,x
+        sta swingscreenstore+(4*swingbase)+12,x
         lda textline4,x
         adc #_eorcode
-        sta screen+520,x
+        sta swingscreenstore+(5*swingbase)+12,x
         lda textline5,x
         adc #_eorcode
-        sta screen+560,x
+        sta swingscreenstore+(6*swingbase)+12,x
         lda textline6,x
         adc #_eorcode
-        sta screen+600,x
+        sta swingscreenstore+(7*swingbase)+12,x
        
         inx
         cpx #40
@@ -204,77 +217,6 @@ clrdata lda #0
         cli
         jmp titleloop
 
-;-----------------------------------------
-;Main IRQ raster interrupts for the
-;front end
-;-----------------------------------------
-
-titleirq
-        ;Scroll text message 
-
-        inc $d019
-        lda $dc0d
-        sta $dd0d
-        lda #$22
-        sta $d012
-        lda #$03
-        sta $dd00
-        lda #$1b
-        sta $d011
-        lda xpos
-        sta $d016 
-        lda #$18
-        sta $d018
-       
-        ldx #<titleirq2
-        ldy #>titleirq2
-        stx $0314
-        sty $0315
-        jmp $ea7e
-
-titleirq2
-        ;Bitmap logo
-
-        inc $d019
-        lda #$7a
-        sta $d012
-        lda #$02
-        sta $dd00
-        lda #$3b
-        sta $d011
-        lda #$18
-        sta $d016
-        lda #$78
-        sta $d018
-         lda #1
-        sta rt
-        jsr musicplayer
-        ldx #<titleirq3
-        ldy #>titleirq3
-        stx $0314
-        sty $0315
-        jmp $ea7e
-
-titleirq3
-        ;Static screen text display 
-
-        inc $d019
-        lda #$ba
-        sta $d012
-        lda #$03
-        sta $dd00
-        lda #$1b
-        sta $d011
-        lda #$18
-        sta $d018
-        lda #$08
-        sta $d016
-       
-        ldx #<titleirq 
-        ldy #>titleirq 
-        stx $0314
-        sty $0315
-        jmp $ea7e
 
 ;-----------------------------------------
 ;Main title screen loop
@@ -290,6 +232,8 @@ titleloop
         sta rt
         cmp rt
         beq *-3
+        
+        jsr swingtable
         jsr bigscroll
 
         ;Wait for fire button to be 
@@ -327,18 +271,51 @@ okstart
         jmp gamestart
         
 ;-----------------------------------------
-;Scroll hi score table
+;Swing hi score table
 ;-----------------------------------------
 
-charmem = $2400 ;Memory to reach the charset
-space = 202     ;Custom space char for the scroll       
-charprint = 201 ;Custom print char for the scroll    
-scrollspeed = 7 ;Speed of 8x8 scroll
-
-xpos  !byte $07
-data1 !byte 0,0,0,0,0,0,0,0 ;Plotting char data
-data2 !byte 0,0,0,0,0,0,0,0 ;to form character
-count !byte 8 ;Amount of bytes to read
+swingtable
+        lda #$ff
+        sec
+        ldx swingpointer
+        sbc sinus,x 
+        lsr
+        lsr
+        lsr
+        tax
+        ldy #$00
+screenloop  lda swingscreenstore,x
+        sta screen+320,y
+        lda swingscreenstore+(1*swingbase),x 
+        sta screen+360,y
+        lda swingscreenstore+(2*swingbase),x
+        sta screen+400,y
+        lda swingscreenstore+(3*swingbase),x
+        sta screen+440,y 
+        lda swingscreenstore+(4*swingbase),x
+        sta screen+480,y
+        lda swingscreenstore+(5*swingbase),x
+        sta screen+520,y
+        lda swingscreenstore+(6*swingbase),x
+        sta screen+560,y
+        lda swingscreenstore+(7*swingbase),x
+        sta screen+600,y 
+        inx
+        iny
+        cpy #$28
+        bne screenloop
+        ldx swingpointer
+        lda sinus,x
+        and #$07
+        ora #$d0
+        sta swingstore
+        lda swingpointer
+        clc
+        adc #2
+        sta swingpointer
+        rts
+        
+        
 
 ;Scroll routine exit 
 
@@ -466,9 +443,95 @@ scrloop8
         inc messread+2
 scrloop9
         jmp exitscroll
-!align $ff,0
+;-----------------------------------------
+;Main IRQ raster interrupts for the
+;front end
+;-----------------------------------------
+
+titleirq
+        ;Scroll text message 
+
+        inc $d019
+        lda $dc0d
+        sta $dd0d
+        lda #$22
+        sta $d012
+        lda #$03
+        sta $dd00
+        lda #$1b
+        sta $d011
+        lda xpos
+        sta $d016 
+        lda #$18
+        sta $d018
+      ;  lda #1
+      ;  sta $d020
+     
+        ldx #<titleirq2
+        ldy #>titleirq2
+        stx $0314
+        sty $0315
+        jmp $ea7e
+
+titleirq2
+        ;Bitmap logo
+
+        inc $d019
+        lda #$78
+        sta $d012
+        lda #$02
+        sta $dd00
+        lda #$3b
+        sta $d011
+        lda #$18
+        sta $d016
+        lda #$78
+        sta $d018
         
+     ;   lda #2
+     ;   sta $d020
+       
+        lda #1
+        sta rt
+        jsr musicplayer
+        ldx #<titleirq3
+        ldy #>titleirq3
+        stx $0314
+        sty $0315
+        jmp $ea7e
+
+titleirq3
+        ;Static screen text display 
+
+        inc $d019
+        lda #$ba
+        sta $d012
+        lda #$03
+        sta $dd00
+        lda #$1b
+        sta $d011
+        lda #$18
+        sta $d018
+        lda swingstore
+        sta $d016
+    ;    lda #3
+    ;    sta $d020
+        ldx #<titleirq 
+        ldy #>titleirq 
+        stx $0314
+        sty $0315
+        jmp $ea7e
+swingpointer !byte 0
+
+xpos  !byte $07
+data1 !byte 0,0,0,0,0,0,0,0 ;Plotting char data
+data2 !byte 0,0,0,0,0,0,0,0 ;to form character
+count !byte 8 ;Amount of bytes to read
+   
 ;High score list
+
+!align $ff,0
+
         !ct scr
 textline1
         !text "       >>> todays best spinners <<<     "
@@ -495,7 +558,14 @@ textline6
 name5 !text "games     ........ "
 hiscore5     !text "001000     "
 hiscoreend
+
+difficultymenu 
+               !text "     please select game difficulty      "
+!text "        1. normal                       "
+!text "        2. a bit more difficult         "
+!text "        3. are you totally nuts?        "
 !align $ff,0
+
 ;Title screen scroll text
 
 scrolltext
@@ -519,4 +589,50 @@ scrolltext
         !text "press spacebar or fire to play, and also have fun ...                "
         !text "                        "
         !byte 0
+        
+;Swing sinus 
+        
 !align $100,0        
+sinus !byte 60,57,55,52,50,47
+      !byte 45,42,40,38,36,34
+      !byte 31,29,27,26,24,22
+      !byte 20,19,17,15,14,13
+      !byte 11,10,9,8,7,6
+      !byte 5,4,3,3,2,1
+      !byte 1,1,0,0,0,0
+      !byte 0,0,0,1,1,1
+      !byte 2,2,3,4,4,5
+      !byte 6,7,8,9,11,12
+      !byte 13,15,16,18,19,21
+      !byte 23,25,27,28,30,33
+      !byte 35,37,39,41,44,46
+      !byte 48,51,53,56,59,61
+      !byte 64,67,69,72,75,78
+      !byte 81,84,87,90,93,96
+      !byte 99,102,105,108,111,114
+      !byte 117,120,124,127,130,133
+      !byte 136,139,142,145,149,152
+      !byte 155,158,161,164,167,170
+      !byte 173,176,178,181,184,187
+      !byte 190,192,195,198,200,203
+      !byte 205,208,210,213,215,217
+      !byte 219,221,224,226,228,229
+      !byte 231,233,235,236,238,240
+      !byte 241,242,244,245,246,247
+      !byte 248,249,250,251,252,252
+      !byte 253,254,254,254,255,255
+      !byte 255,255,255,255,255,254
+      !byte 254,254,253,253,252,251
+      !byte 251,250,249,248,247,246
+      !byte 244,243,242,240,239,237
+      !byte 236,234,232,230,228,227
+      !byte 225,222,220,218,216,214
+      !byte 211,209,207,204,202,199
+      !byte 196,194,191,188,186,183
+      !byte 180,177,174,171,168,165
+      !byte 162,159,156,153,150,147
+      !byte 144,141,138,135,131,128
+      !byte 125,122,119,116,113,110
+      !byte 106,103,100,97,94,91
+      !byte 88,85,82,79,77,74
+      !byte 71,68,65,63

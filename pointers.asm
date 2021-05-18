@@ -32,6 +32,7 @@ playerdeathpointer !byte 0
 shielddelay !byte 0
 shieldpointer !byte 0
 shieldtimer !byte 200
+shielddifficulty !byte 100
 explodepointer !byte 0
 explodedelay !byte 0
 ;Amount of lives for the player

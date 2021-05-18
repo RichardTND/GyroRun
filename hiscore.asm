@@ -25,6 +25,10 @@ hiscorecheck
            sta $d015
            sta $d01a
            sta $d019
+           sta fdelay
+           sta fpointer
+           lda #8
+           jsr $ffd2
            
             ;Convert score to final score
             
@@ -328,7 +332,11 @@ makeseps lda #$2d
 ;keys, spacebar, delete and return
 ;--------------------------------------------------------          
 
-keypress
+keypress    lda #0
+            sta rt
+            cmp rt 
+            beq *-3
+            jsr flashwelldonetext
             jsr $ffe4
             cmp #$0d
             beq return
@@ -366,6 +374,39 @@ grabloop    lda $068e,x
             bne grabloop
             rts
             
+flashwelldonetext
+            lda fdelay
+            cmp #2
+            beq flashset 
+            inc fdelay
+            rts
+flashset    lda #0
+            sta fdelay 
+            ldx fpointer
+            lda colourtable,x 
+            sta fstore
+            lda colourtable2,x
+            sta fstore2
+            inx
+            cpx #10
+            beq loopflashtext
+            inc fpointer
+            jmp storemainflash
+            
+loopflashtext ldx #$00
+            stx fpointer
+storemainflash
+            ldx #0
+storemainflash2            
+            lda fstore
+            sta colour+(6*40),x
+            lda fstore2
+            sta $da6e,x 
+            inx
+            cpx #40
+            bne storemainflash2
+            rts
+            
 ;----------------------------------------------------------
 
 ;Hi score IRQ 
@@ -375,6 +416,8 @@ hiirq       inc $d019
             sta $dd0d
             lda #$f8
             sta $d012
+            lda #1
+            sta rt
             jsr musicplayer
             
             jmp $ea31
@@ -382,7 +425,10 @@ hiirq       inc $d019
 ;----------------------------------------------------------
 namecount   !byte 0
 buffer      !byte 0
-            
+fdelay      !byte 0 ;Flash delay
+fpointer    !byte 0 ;Flash pointer           
+fstore      !byte 0
+fstore2     !byte 0
             !ct scr
 message1    !text "             congratulations            "
 message2    !text "     your score is a real spinner       "
@@ -390,4 +436,7 @@ message3    !text "you have made it onto the hall of fame. "
 message4    !text "        please type in your name.       "
 name        !text "         "
 finalscore  !byte $30,$30,$30,$30,$30,$30
+
+colourtable !byte $00,$06,$04,$0a,$07,$01,$07,$0a,$04,$06
+colourtable2 !byte $01,$07,$0a,$04,$02,$00,$02,$04,$0a,$07
             

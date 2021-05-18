@@ -4,14 +4,10 @@ fname:  !text "GYRO-RUN.HI"
 fnamelen = *-fname
 dnamelen = *-dname
 
-
 mainsave:
-      
       jsr DisableInts 
-     
       jsr savefile
 SkipHiScoreSaver      
-      
 
       jmp TitleScreen
       

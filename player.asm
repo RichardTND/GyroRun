@@ -292,21 +292,21 @@ storeright      sta objpos
 ;Player control - Automatic launch when set to 
 ;idle at the start of a game.
 ;----------------------------------------------
-autotimer       lda playerreleased
-                beq beingidle
-                rts
+autotimer      ; lda playerreleased
+               ; beq beingidle
+               ; rts
 beingidle                
-                lda playerwaittime
-                beq idlenomore
-                dec playerwaittime
-                rts
-idlenomore      lda #0
-                sta playerwaittime
+               ; lda playerwaittime
+               ; beq idlenomore
+               ; dec playerwaittime
+               ; rts
+idlenomore     ; lda #0
+               ; sta playerwaittime
                 
                 ;Force player to move
                 
                 lda #1
-                sta playerdir
+               ; sta playerdir
                 sta playerreleased
                 sta playerismoving
                 rts
@@ -332,6 +332,10 @@ show3lives      lda #heart
                 sta screen+960+39
                 sta screen+960+38
                 sta screen+960+37
+                lda #2
+                sta colour+960+39
+                sta colour+960+38
+                sta colour+960+37
                 rts
                 
 ;Show 2 lives on the screen indicator (black out the last
@@ -342,6 +346,11 @@ show2lives      lda #$a0
                 lda #heart
                 sta screen+960+38
                 sta screen+960+37
+                
+                lda #2
+                sta colour+960+39
+                sta colour+960+38
+                sta colour+960+37
                 rts
 
 ;Show 1 life on screen indicator (black out the second heart
@@ -351,6 +360,11 @@ show1lives      lda #heart
                 lda #$a0
                 sta screen+960+38
                 sta screen+960+37
+                
+                lda #2
+                sta colour+960+39
+                sta colour+960+38
+                sta colour+960+37
                 rts
                 
 ;Show 0 lives on screen indicator 
@@ -359,6 +373,11 @@ show0lives      lda #$a0
                 sta screen+960+39
                 sta screen+960+38
                 sta screen+960+37
+                
+                lda #2
+                sta colour+960+39
+                sta colour+960+38
+                sta colour+960+37
                 rts
                 
 ;-----------------------------------------
@@ -372,7 +391,7 @@ rotatespinner
         ;direction
 
         lda dirdelay
-        cmp #3
+        cmp #6
         beq dirswitch
         inc dirdelay
 cannotswap

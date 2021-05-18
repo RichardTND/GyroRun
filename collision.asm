@@ -222,7 +222,7 @@ shieldboostcheck
               beq activateshield
               rts
 activateshield
-              lda #100
+              lda shielddifficulty
               sta shieldtimer
               rts
               

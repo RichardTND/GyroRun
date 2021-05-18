@@ -62,8 +62,101 @@ startnewgame
         sta $dc0d
         sta $dd0d
         
-       
+        ;Clear screen
         
+        ldx #$00
+scrclrmode
+        lda #$a0
+        sta $0400,x
+        sta $0500,x
+        sta $0600,x
+        sta $06e8,x
+        lda #$07
+        sta $d800,x
+        sta $d900,x
+        sta $da00,x
+        sta $dae8,x
+        inx
+        bne scrclrmode
+        
+        ldx #$00
+copydiftext
+        lda difficultymenu,x 
+        eor #$80
+        sta screen+360,x 
+        lda difficultymenu+(1*40),x
+        eor #$80
+        sta screen+440,x
+        lda difficultymenu+(2*40),x
+        eor #$80
+        sta screen+480,x
+        lda difficultymenu+(3*40),x
+        eor #$80
+        sta screen+520,x
+        inx 
+        cpx #$28
+        bne copydiftext
+        lda #$08
+        sta $d016
+        lda #$18
+        sta $d018 
+        lda #$03
+        sta $dd00
+;Key press to select difficulty level curve
+;---------------------------------------
+;Setup the IRQ Raster interrupt player
+;---------------------------------------
+        lda $fb
+        txs
+        ldx #<gameirq
+        ldy #>gameirq
+        stx $0314
+        sty $0315
+        lda #$7f
+        sta $dc0d
+        lda #$36
+        sta $d012
+        lda #$1b
+        sta $d011
+        lda #$01
+        sta $d019
+        sta $d01a
+       
+        cli
+optionloop
+        
+        jsr $ffe4
+        cmp #$31
+        beq skilleasy
+        cmp #$32
+        beq skillmedium 
+        cmp #$33
+        beq skillhard
+        jmp optionloop
+        
+skilleasy
+        lda #2
+        sta playerspeedskill
+        lda #200
+        sta shielddifficulty
+        jmp start 
+        
+skillmedium 
+        lda #1
+        sta playerspeedskill 
+        lda #150
+        sta shielddifficulty
+        jmp start 
+        
+skillhard
+        lda #0
+        sta playerspeedskill
+        lda #100
+        sta shielddifficulty
+         
+        
+       
+start        
         ;Reset firebutton properties and 
         ;speed skill
 
@@ -181,27 +274,7 @@ scloop  lda #$30
         
         
         jsr updatescore
-;---------------------------------------
-;Setup the IRQ Raster interrupt player
-;---------------------------------------
-        lda $fb
-        txs
-        ldx #<gameirq
-        ldy #>gameirq
-        stx $0314
-        sty $0315
-        lda #$7f
-        sta $dc0d
-        lda #$36
-        sta $d012
-        lda #$1b
-        sta $d011
-        lda #$01
-        sta $d019
-        sta $d01a
-        lda #1 ;In game music
-        jsr musicinit
-        cli
+
         
         ;Initialise lives indicator
         jsr livesindicator
@@ -233,6 +306,8 @@ zerospriteframes
         jmp getready ;Jump directly to the GET READY screen
         
 setupgame 
+        lda #1 ;In game music
+        jsr musicinit
         
         ;Jump to main game loop
         jmp gameloop
@@ -252,7 +327,7 @@ gameirq
         lda #1
         sta rt
         jsr musicplayer
-        jmp $ea7e
+        jmp $ea31
 ;---------------------------------------
 ;Music player (PAL/NTSC check)
 ;---------------------------------------
@@ -324,8 +399,10 @@ removeallsprites
         lda #1 ;Setup in game music
         
         jsr musicinit
-        jsr expandspritearea
-        
+      
+        lda #1
+        sta playerdirset
+        sta playerdir
 ;-----------------------------------------
 ;Main game loop
 ;-----------------------------------------
@@ -772,6 +849,22 @@ getreadyloop
           jsr animbackground
           
           lda $dc00
+          lsr
+          lsr
+          lsr
+          lsr
+          lsr
+          bit firebutton
+          ror firebutton
+          bmi getreadyloop2
+          bvc getreadyloop2
+          lda #0
+          sta firebutton
+          lda #250
+          sta shieldtimer
+          jmp setupgamecode
+getreadyloop2              
+          lda $dc01
           lsr
           lsr
           lsr

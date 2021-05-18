@@ -16,6 +16,9 @@ screen = $0400 ;Default screen ram memory we are storing screen chars to
 colour = $d800 ;Colour ram which we are storing colour data to
 bmpcol = $5800 ;Colour data which the VIDCOM PAINT logo is  locaated
 
+swingscreenstore = $c000
+swingbase = 78
+
 ;Charset coded variables
 
 _eorcode = 128  ;Where the text charset has been assigned
@@ -82,3 +85,11 @@ nmtemp1 = $09
 nmtemp2 = $0a
 nmtemp3 = $0b
 nmtemp4 = $0c
+
+;Titlescreen vars
+
+charmem = $2400 ;Memory to reach the charset
+space = 202     ;Custom space char for the scroll       
+charprint = 201 ;Custom print char for the scroll    
+scrollspeed = 7 ;Speed of 8x8 scroll
+swingstore   = $ee  
