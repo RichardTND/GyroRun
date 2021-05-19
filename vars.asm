@@ -91,5 +91,5 @@ nmtemp4 = $0c
 charmem = $2400 ;Memory to reach the charset
 space = 202     ;Custom space char for the scroll       
 charprint = 201 ;Custom print char for the scroll    
-scrollspeed = 7 ;Speed of 8x8 scroll
+scrollspeed = 4 ;Speed of 8x8 scroll
 swingstore   = $ee  

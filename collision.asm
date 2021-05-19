@@ -140,6 +140,7 @@ sweets2       ldy zp+3
               beq remove_sweet2_top_left 
               cmp #sweet2_top_right
               beq remove_sweet2_top_right
+              
             
               rts 
               
@@ -167,7 +168,7 @@ remove_sweet3_top_left
               jsr remove_top_left
 sweet3main    jsr score500
               jsr shieldboostcheck
-              jsr playpickupsfx
+              jsr playpickup3sfx
               rts
               
 remove_sweet3_top_right
@@ -295,7 +296,7 @@ playpickup2sfx ldx #14
                rts 
                
 ;Collect 3 sfx
-playpickupsfx  ldx #14
+playpickup3sfx  ldx #14
                lda #<sfx_pickup3
                ldy #>sfx_pickup3
                jsr sfxplay

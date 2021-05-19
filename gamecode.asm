@@ -174,9 +174,7 @@ start
         sta animpointer 
         sta animdelay
         sta playerisdead
-        lda #1
-        sta playerdirset
-        
+       
         lda #$c0
         sta playeranimtype
         jsr randomizer
@@ -327,7 +325,7 @@ gameirq
         lda #1
         sta rt
         jsr musicplayer
-        jmp $ea31
+        jmp $ea7e
 ;---------------------------------------
 ;Music player (PAL/NTSC check)
 ;---------------------------------------
@@ -399,11 +397,9 @@ removeallsprites
         lda #1 ;Setup in game music
         
         jsr musicinit
+        
       
-        lda #1
-        sta playerdirset
-        sta playerdir
-;-----------------------------------------
+        jsr respawn
 ;Main game loop
 ;-----------------------------------------
 
@@ -417,6 +413,8 @@ gameloop
         sta rt  
         cmp rt
         beq *-3
+        ;Background animation
+        jsr animbackground
         
         ;Main game loop sub routines, 
         ;merged with the synctimer (rt)
@@ -431,9 +429,6 @@ gameloop
         ;Random reading of plotting sweets
         jsr plotsweets
         
-        ;Background animation
-        jsr animbackground
-
         ;Level control 
         
         jsr levelcontrol
@@ -768,7 +763,7 @@ switchtimer
           lda #0
           sta leveltimer
           lda leveltimer+1
-          cmp #30 ;30 secs = level up
+          cmp #45 ;45 secs = level up
           beq levelup
           inc leveltimer+1
           rts
@@ -878,6 +873,10 @@ getreadyloop2
           sta firebutton
           lda #250
           sta shieldtimer
+           lda #1
+        sta playerdirset
+        sta playerismoving
+        sta playerdir
           jmp setupgamecode
           
 ;----------------------------------------------

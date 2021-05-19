@@ -29,6 +29,110 @@ silent  lda #$00
         inx
         cpx #$18
         bne silent
+        lda #252
+        sta 808
+        ldx #$00
+wait001  ldy #$00
+wait002  iny
+        bne wait002
+        inx
+        bne wait001
+;Display loading picture on screen
+        
+        ldx #$00
+showloop 
+        lda $c800,x
+        sta $d800,x
+        lda $c900,x
+        sta $d900,x
+        lda $ca00,x
+        sta $da00,x
+        lda $cae8,x
+        sta $dae8,x
+        inx
+        bne showloop
+     
+        lda #0
+        sta $d021
+        sta $d020
+        lda #$3b
+        sta $d011
+        lda #$00
+        sta $dd00
+        lda #$18
+        sta $d016 
+        sta $d018
+        
+        ldx #<gameirq
+        ldy #>gameirq
+        lda #$7f
+        stx $0314
+        sty $0315
+        sta $dc0d
+        
+        lda #$36
+        sta $d012
+        lda #$01
+        sta $d01a
+        lda #4
+        jsr musicinit
+        cli
+        
+        lda #0
+        sta firebutton
+firewaitpic         
+        lda $dc00
+        lsr
+        lsr
+        lsr
+        lsr
+        lsr
+        bit firebutton
+        ror firebutton
+        bmi firewaitpic2
+        bvc firewaitpic2
+        jmp skippic 
+firewaitpic2
+        lda $dc01 
+        lsr
+        lsr
+        lsr
+        lsr
+        lsr
+        bit firebutton
+        ror firebutton
+        bmi firewaitpic
+        bvc firewaitpic
+
+skippic
+        lda #0
+        sta firebutton
+
+        sei
+        ldx #$31
+        ldy #$ea 
+        lda #$81
+        sta $0314
+        stx $0315
+        sta $dc0d
+        sta $dd0d
+        lda #$00
+        sta $d019
+        sta $d01a
+        ldx #$00
+nosidstart
+        lda #$00
+        sta $d400,x
+        inx
+        cpx #$18
+        bne nosidstart
+        lda #0
+        sta swingpointer
+        sta slowpaintdelay
+        sta slowpaintpointer
+        lda #1
+        sta slowpaintstore
+        
         
         
 ;Quick delay routine
@@ -232,10 +336,9 @@ titleloop
         sta rt
         cmp rt
         beq *-3
-        
         jsr swingtable
         jsr bigscroll
-
+        jsr longcolourwash
         ;Wait for fire button to be 
         ;pressed and released before
         ;starting a new game 
@@ -271,10 +374,13 @@ okstart
         jmp gamestart
         
 ;-----------------------------------------
-;Swing hi score table
+;Swing hi score table - also add a fun 
+;colour effect to the table
 ;-----------------------------------------
 
 swingtable
+        
+        
         lda #$ff
         sec
         ldx swingpointer
@@ -307,16 +413,16 @@ screenloop  lda swingscreenstore,x
         ldx swingpointer
         lda sinus,x
         and #$07
-        ora #$d0
+        
         sta swingstore
         lda swingpointer
         clc
-        adc #2
+        adc #1
         sta swingpointer
         rts
+   
         
         
-
 ;Scroll routine exit 
 
 exitscroll
@@ -521,7 +627,74 @@ titleirq3
         stx $0314
         sty $0315
         jmp $ea7e
+        
+
+;----------------------------------------
+; Long colour wash routine - paint the 
+; text up screen in slow motion
+;----------------------------------------        
+longcolourwash
+        lda slowpaintdelay 
+        cmp #3
+        beq slowpaintok 
+        inc slowpaintdelay
+        rts
+slowpaintok
+        lda #0
+        sta slowpaintdelay
+        ldx slowpaintpointer
+        lda slowpainttable,x
+        sta slowpaintstore
+        inx
+        cpx #80
+        beq slowpaintreset
+        inc slowpaintpointer
+        jmp painttotable
+        rts
+slowpaintreset
+        ldx #0
+        stx slowpaintpointer
+painttotable
+        ldx #$27
+shiftupcolour
+        
+        lda colour+400,x
+        sta colour+360,x
+        lda colour+440,x
+        sta colour+400,x
+        lda colour+480,x
+        sta colour+440,x
+        lda colour+520,x
+        sta colour+480,x
+        lda colour+560,x
+        sta colour+520,x
+        lda colour+600,x
+        sta colour+560,x
+        lda slowpaintstore
+        sta colour+600,x
+        dex
+        bpl shiftupcolour
+        rts
+        
+                
+        
 swingpointer !byte 0
+
+slowpaintdelay   !byte 0
+slowpaintpointer !byte 0
+slowpaintstore   !byte 0
+
+slowpainttable   
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$01,$01,$01,$01
+                 !byte $01,$01,$01,$01,$07,$0a,$04,$06
+                 !byte $06,$04,$0a,$07,$01,$01,$01,$01
 
 xpos  !byte $07
 data1 !byte 0,0,0,0,0,0,0,0 ;Plotting char data
@@ -546,7 +719,7 @@ name2 !text "hugues    ........ "
 hiscore2 !text "007500     "
 textline4
         !text "       3. "
-name3 !text "martin    ........ "
+name3 !text "alf       ........ "
 hiscore3     !text "005000     "
 textline5
         !text "       4. "
@@ -571,7 +744,7 @@ difficultymenu
 scrolltext
         !text "   >>> gyro run <<< ...   code, font, sound effects and music by richard "
         !text "bayliss ...   game graphics, sprites, logo, and loading bitmap "
-        !text "by hugues (ax!s) poisseroux ...   tape loader system by martin piper ...   (c) 2021 the new dimension ...   "
+        !text "by hugues (ax!s) poisseroux ... (c) 2021 the new dimension ...   special thanks goes to hugues poisseroux and alf yngve for testing and feedback ... " 
         !text "this is a high score attack party game ...   controls: joystick "
         !text "in either port or use keys ctrl, 2 or spacebar ...   "
         !text "use left/right to turn the arrow at the bottom of the screen and "

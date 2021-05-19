@@ -30,6 +30,9 @@ hiscorecheck
            lda #8
            jsr $ffd2
            
+           lda #0   ;Flush keyboard
+           sta $c6
+           
             ;Convert score to final score
             
             ldx #$00

@@ -47,4 +47,11 @@ map
 ;Music
         !binary "c64\music.prg",,2
         
+*=$c400
+        !binary "c64\gyrovidram.prg",,2
+*=$c800
+        !binary "c64\gyrocolram.prg",,2
+*=$e000
+        !binary "c64\gyrobitmap.prg",,2
+        
         

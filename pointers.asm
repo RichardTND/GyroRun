@@ -52,8 +52,8 @@ sweetplotcounter !byte 0
 spawnsweettimer !byte 0
 randomobjecttospawn !byte 0
 spawntimeexpiry !byte 120
-rtemp !byte $5a
-rand !byte %10011101,%01011011
+rtemp !byte $5c
+rand !byte %10010101,%01001011
 
 ;Sprite pointers 
 objpos !byte 0,0,0,0,0,0,0,0

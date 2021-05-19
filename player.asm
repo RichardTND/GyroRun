@@ -11,6 +11,7 @@
 
 playercontrol        
 
+        jsr updatedial
         ;First check if the player is dead 
         ;if it is, then call death animation 
         ;otherwise the player is alive.
@@ -61,30 +62,28 @@ checkrespawn
         jsr clearplayarea
         
         ;Spawn the player to its default positiion
-        
+respawn        
         lda #$54
         sta objpos
-        lda #$84
+        lda #$c0
         sta objpos+1
         
         ;Disable player moving and init all 
         ;colour flash/shield pointers
         lda #1
         sta playerdirset
-        lda #0
+        lda #1
         sta playerismoving
         sta playerreleased
-        
+        sta playerdir
+        sta dirpointer
+        lda #0
         sta playerisdead
         lda #200
         sta shieldtimer
         lda #0
         sta shieldpointer
         sta shielddelay
-        
-        ;Reset player waiting time
-        lda #200
-        sta playerwaittime
         rts
         
         ;All lives are lost, run game over 
@@ -102,16 +101,13 @@ callgameover
 playerisalive
         
         jsr spritetochar 
-        jsr autotimer ;If the player is idle, wait a few seconds then launch
         jsr rotatespinner
         jsr animplayer
         jsr testshield
-        lda playeranimtype
-       
-        lda playerreleased
-        cmp #1
-        beq controlmovement
-        jmp firecontrol
+        ;lda playerreleased
+        ;cmp #1
+        ;beq controlmovement
+        ;jmp firecontrol
 
 ;The player is allowed to move
 
@@ -288,28 +284,6 @@ rightlogic      lda objpos
 storeright      sta objpos
                 rts
                 
-;----------------------------------------------
-;Player control - Automatic launch when set to 
-;idle at the start of a game.
-;----------------------------------------------
-autotimer      ; lda playerreleased
-               ; beq beingidle
-               ; rts
-beingidle                
-               ; lda playerwaittime
-               ; beq idlenomore
-               ; dec playerwaittime
-               ; rts
-idlenomore     ; lda #0
-               ; sta playerwaittime
-                
-                ;Force player to move
-                
-                lda #1
-               ; sta playerdir
-                sta playerreleased
-                sta playerismoving
-                rts
 ;---------------------------------------------                
 ;Lives update - This will count the number of
 ;lives the player has, and then indicate the
@@ -410,12 +384,12 @@ dirswitch
 jleft   lda #4
         bit $dc00 ;LEFT 
         bne jright
-        jmp dialclockwise
+        jmp dialanticlockwise
         
 jright  lda #8
         bit $dc00
         bne nojoy2
-        jmp dialanticlockwise
+        jmp dialclockwise
 nojoy2
         lda #4
         bit $dc01
