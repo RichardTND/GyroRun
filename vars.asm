@@ -14,8 +14,8 @@ sfxplay = $8006
 
 screen = $0400 ;Default screen ram memory we are storing screen chars to 
 colour = $d800 ;Colour ram which we are storing colour data to
-bmpcol = $5800 ;Colour data which the VIDCOM PAINT logo is  locaated
-
+bmpcol = $5800 ;Colour data which the logo is locaated
+piccolram = $c800 ;Colour data which the LOADING PICTURE colour RAM is based
 swingscreenstore = $c000
 swingbase = 78
 
@@ -93,3 +93,15 @@ space = 202     ;Custom space char for the scroll
 charprint = 201 ;Custom print char for the scroll    
 scrollspeed = 4 ;Speed of 8x8 scroll
 swingstore   = $ee  
+
+;Sprite pointers
+levelspriteleft = $e0
+levelspriteright = $e1
+level1sprite = $e2
+level2sprite = $e3
+level3sprite = $e4
+level4sprite = $e5 
+level5sprite = $e6
+level6sprite = $e7
+level7sprite = $e8
+level8sprite = $e9

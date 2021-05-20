@@ -9,46 +9,28 @@ titlecode
 TitleScreen
 ;Destroy all IRQ raster interrupts
 
-        sei
-       
-        ldx #$31
-        ldy #$ea
-        lda #$81
-        stx $0314
-        sty $0315
-        sta $dc0d
-        sta $dd0d
-        lda #$00
-        sta $d01a
-        sta $d019
-        sta $d015
-        sta $d011
-        ldx #$00
-silent  lda #$00
-        sta $d400,x
-        inx
-        cpx #$18
-        bne silent
-        lda #252
-        sta 808
-        ldx #$00
-wait001  ldy #$00
-wait002  iny
-        bne wait002
-        inx
-        bne wait001
-;Display loading picture on screen
+        ;Picture display should only be once.
         
+        lda pictureshowed
+        cmp #1
+        beq skippicshowerroutine
+        jsr stopinterrupts
+        jmp displaybitmap
+skippicshowerroutine
+        jmp skippic
+        
+;Display loading picture on screen
+displaybitmap        
         ldx #$00
 showloop 
-        lda $c800,x
-        sta $d800,x
-        lda $c900,x
-        sta $d900,x
-        lda $ca00,x
-        sta $da00,x
-        lda $cae8,x
-        sta $dae8,x
+        lda piccolram,x
+        sta colour,x
+        lda piccolram+$100,x
+        sta colour+$100,x
+        lda piccolram+$200,x
+        sta colour+$200,x
+        lda piccolram+$2e8,x
+        sta colour+$2e8,x
         inx
         bne showloop
      
@@ -62,6 +44,11 @@ showloop
         lda #$18
         sta $d016 
         sta $d018
+        lda #1
+        sta pictureshowed
+        
+        ;Call the main game IRQ for the picture
+        ;displayer
         
         ldx #<gameirq
         ldy #>gameirq
@@ -107,25 +94,12 @@ firewaitpic2
 skippic
         lda #0
         sta firebutton
-
-        sei
-        ldx #$31
-        ldy #$ea 
-        lda #$81
-        sta $0314
-        stx $0315
-        sta $dc0d
-        sta $dd0d
-        lda #$00
-        sta $d019
-        sta $d01a
-        ldx #$00
-nosidstart
-        lda #$00
-        sta $d400,x
-        inx
-        cpx #$18
-        bne nosidstart
+        lda #$08
+        sta $d016
+        jsr stopinterrupts ;Switch off interrupts again
+        
+        ;Initialise title screen pointers
+        
         lda #0
         sta swingpointer
         sta slowpaintdelay
@@ -133,30 +107,8 @@ nosidstart
         lda #1
         sta slowpaintstore
         
-        
-        
-;Quick delay routine
-
-        ldx #$00
-wait01  ldy #$00
-wait02  iny
-        bne wait02
-        inx
-        bne wait01
-        
-        
-        ;Silence sid chip
-
-        ldx #$00
-blanksid
-        lda #$00
-        sta $d400,x
-        inx
-        cpx #$18
-        bne blanksid
-
-
-;Clear screen
+;Clear screen and swing matrix position
+;for hi score names
 
         ldx #$00
 clearscreentitle
@@ -676,7 +628,56 @@ shiftupcolour
         bpl shiftupcolour
         rts
         
-                
+
+;*************************************
+;Important subroutine to switch off
+;interrupts in each part of the program. 
+;This is used to optimise the code 
+;slightly
+;*************************************         
+stopinterrupts
+
+        sei
+        ldx #$31
+        ldy #$ea
+        lda #$81
+        stx $0314
+        sty $0315
+        sta $dc0d
+        sta $dd0d
+        lda #$00
+        sta $d01a
+        sta $d019
+        sta $d015
+        sta $d011
+        ldx #$00
+silent  lda #$00
+        sta $d400,x
+        inx
+        cpx #$18
+        bne silent
+        lda #252
+        sta 808
+        ldx #$00
+clrmr   lda #0
+        sta $d800,x
+        sta $d900,x 
+        sta $da00,x
+        sta $dae8,x
+        sta $0400,x
+        sta $0500,x
+        sta $0600,x
+        sta $06e8,x
+        inx 
+        bne clrmr
+        ldx #$00
+wait001  ldy #$00
+wait002  iny
+        bne wait002
+        inx
+        bne wait001
+      
+        rts
         
 swingpointer !byte 0
 

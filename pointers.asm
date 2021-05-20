@@ -6,8 +6,7 @@
 ;=======================================
 
 ;General pointers
-
-!align $ff,0
+pictureshowed !byte 0
 system  !byte 0
 ntsctimer !byte 0
 rt      !byte 0
@@ -46,7 +45,6 @@ lefttemp !byte 0
 righttemp !byte 0
 
 leveltimer !byte 0,0
-
 ;Randomizer
 sweetplotcounter !byte 0
 spawnsweettimer !byte 0
@@ -62,7 +60,6 @@ objpos !byte 0,0,0,0,0,0,0,0
 ;Collider pointers
 collision !byte 0,0,0,0
 
-!align $100,0
 ;Sprite animation pointers
 
 animtable   !byte $c0,$c1,$c2,$c3,$c0,$c1,$c2,$c3
@@ -163,7 +160,7 @@ char_read_hi
  !byte 0
 char_read_hi_end
 
-!align $100,0
+
 char_read_lo_2
  !byte $cc,$ce,$d0,$d2,$d4,$d6,$d8,$da,$dc,$de,$e0,$e2,$e4,$e6,$e8,$ea
  !byte $1c,$1e,$20,$22,$24,$26,$28,$2a,$2c,$2e,$30,$32,$34,$36,$38,$3a
@@ -234,8 +231,9 @@ sfx_pickup1     !byte $0E,$EE,$88,$B0,$41,$B0,$B4,$B4,$B7,$B7,$BC,$BC,$C0,$C0,$B
 sfx_pickup2     !byte $0E,$EE,$88,$B0,$41,$B0,$B2,$B4,$B6,$B8,$BA,$BA,$BC,$BC,$BE,$BE
                 !byte $90,$11,$00                
                 
-sfx_pickup3     !byte $0E,$EE,$88,$B0,$41,$c0,$c2,$c4,$c6,$c8,$cA,$cA,$cC,$cC,$cE,$cE
-                !byte $d0,$d1,$00                
+sfx_pickup3     !byte $0E,$EE,$88,$B0,$41,$C0,$C2,$C4,$C6,$C8,$CA,$CA,$CC,$CC,$CE,$CE
+                !byte $D0,$D1,$00       
+                    
                                 
 sfx_bomb        !byte $0E,$EE,$88,$BC,$81,$BB,$BC,$BB,$BA,$BB,$BA,$BB,$BA,$B9,$BA,$B9
                 !byte $B8,$B9,$B8,$B7,$B8,$B6,$B7,$B6,$B5,$B6,$B5,$B4,$B5,$B4,$B3,$B4

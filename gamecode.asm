@@ -28,6 +28,8 @@ makespacechar
         inx
         cpx #8
         bne makespacechar
+        lda #0
+        sta pictureshowed
 
 ;Main game code
         lda #8
@@ -48,19 +50,11 @@ makespacechar
 gamestart
       
 startnewgame
-        sei
-        ldx #$31
-        ldy #$ea
-        stx $0314
-        sty $0315
-        lda #$00
-        sta $d019
-        sta $d01a
-       
-       
-        lda #$81
-        sta $dc0d
-        sta $dd0d
+
+        ;Clear out all the interrupts that are still 
+        ;running inside the title screen 
+        
+        jsr stopinterrupts
         
         ;Clear screen
         
@@ -121,8 +115,12 @@ copydiftext
         lda #$01
         sta $d019
         sta $d01a
-       
+        lda #0
+        jsr musicinit
+        
         cli
+        lda #8
+        jsr $ffd2
 optionloop
         
         jsr $ffe4
@@ -301,9 +299,14 @@ zerospriteframes
         lda #$0a
         sta $d026
         
+        
         jmp getready ;Jump directly to the GET READY screen
         
 setupgame 
+        lda #$ff
+        sta $d015
+        sta $d01c
+        
         lda #1 ;In game music
         jsr musicinit
         
@@ -325,7 +328,7 @@ gameirq
         lda #1
         sta rt
         jsr musicplayer
-        jmp $ea7e
+        jmp $ea31
 ;---------------------------------------
 ;Music player (PAL/NTSC check)
 ;---------------------------------------
@@ -393,6 +396,31 @@ removeallsprites
         
         lda #6
         sta $d028
+        ;Position level text 
+        lda #$e0
+        sta $07fa
+        lda #$e1
+        sta $07fb 
+        lda #$e2 
+        sta $07fc 
+        lda #$52
+        sta objpos+4
+        clc
+        adc #$0c
+        sta objpos+6
+       
+        adc #$06
+        sta objpos+8
+       
+        lda #$36 
+        sta objpos+5
+        sta objpos+7
+        sta objpos+9
+        lda #1
+        sta $d029
+        sta $d02a
+        sta $d02b
+        jsr expandspritearea
         
         lda #1 ;Setup in game music
         
@@ -754,6 +782,7 @@ shiftright
 ;----------------------------------------------
 
 levelcontrol
+          jsr movelevelup
           lda leveltimer
           cmp #$32 ;32 = 1 second
           beq switchtimer
@@ -777,6 +806,23 @@ levelup   lda #0
           sbc #10
           sta spawntimeexpiry
           
+          lda $07fc
+          cmp #$e9
+          beq spawnnomore
+          inc $07fc
+          ;Reposition level up text 
+          
+          lda #1
+          sta $d02c
+          sta $d02d
+          lda #$00
+          sta objpos+10
+          clc
+          adc #$0c
+          sta objpos+12
+          lda #$84
+          sta objpos+11
+          sta objpos+13
 spawnnomore
           jsr spawnbomb       ;For a bonus spawn a bomb
           lda #0 
@@ -800,6 +846,31 @@ spawnbomb
         jsr objmod1
         rts
           
+;Move level up sprites 
+
+movelevelup
+          lda #$ea
+          sta $07fd
+          lda #$eb
+          sta $07fe
+          lda #2
+          sta $d02c
+          sta $d02d
+          lda objpos+10
+          clc
+          adc #2
+          sta objpos+10
+          lda objpos+12
+          clc
+          adc #2
+          cmp #$ba
+          bcc okaypos
+          lda #0
+          sta objpos+11
+          sta objpos+13
+          sta objpos+10
+okaypos   sta objpos+12
+          rts
 ;----------------------------------------------
 ;Get ready screen - Setup sprites on the main
 ;game board

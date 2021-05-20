@@ -1,0 +1,10 @@
+DIY Tape Mastering Instructions for Gyro Run
+
+Insert a blank tape into your C2N on your C64. Zero counter then Press RECORD and PLAY on tape.
+As soon as the counter has reached 005. Press STOP. Load in GYRO RUN    /TAPE from your master
+disk. Then type in RUN. Then press RECORD and PLAY on tape and wait for the tape mastering
+to finishe. The C64 will reset once finished with mastering.
+
+Have fun.
+
+Richard

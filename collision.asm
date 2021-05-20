@@ -113,6 +113,7 @@ instantkill   lda #0
                
 ;---------------------------------------------
 ;Test collision with sweets type 1
+;Lollipops
 ;---------------------------------------------
 sweets1       ldy zp+3
               lda (zp+1),y
@@ -133,6 +134,8 @@ remove_sweet_top_right
               jsr remove_top_right
               jmp sweet1main
               
+;---------------------------------------------
+;Waffles
 ;---------------------------------------------
 sweets2       ldy zp+3
               lda (zp+1),y
@@ -155,12 +158,14 @@ remove_sweet2_top_right
               jmp sweet2main
               
 ;----------------------------------------------
+;Puddings
+;----------------------------------------------
 sweets3       ldy zp+3
               lda (zp+1),y
               cmp #sweet3_top_left 
-              beq remove_sweet_top_left 
+              beq remove_sweet3_top_left 
               cmp #sweet3_top_right
-              beq remove_sweet_top_right 
+              beq remove_sweet3_top_right 
             
               rts
               
@@ -296,7 +301,7 @@ playpickup2sfx ldx #14
                rts 
                
 ;Collect 3 sfx
-playpickup3sfx  ldx #14
+playpickup3sfx ldx #14
                lda #<sfx_pickup3
                ldy #>sfx_pickup3
                jsr sfxplay

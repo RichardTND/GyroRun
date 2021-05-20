@@ -13,18 +13,13 @@
 ;----------------------------------------
 
 hiscorecheck
-           sei
-           ldx #$31
-           ldy #$ea
-           stx $0314
-           sty $0315
-           lda #$81
-           sta $dc0d
-           sta $dd0d
+           ;IRQ raster interrupts in game
+           ;should stop immediately
+           jsr stopinterrupts
+           
            lda #$00
            sta $d015
-           sta $d01a
-           sta $d019
+           
            sta fdelay
            sta fpointer
            lda #8
