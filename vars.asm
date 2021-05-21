@@ -19,6 +19,13 @@ piccolram = $c800 ;Colour data which the LOADING PICTURE colour RAM is based
 swingscreenstore = $c000
 swingbase = 78
 
+;Option colour 
+
+optcolour1 = colour+560
+optcolour2 = colour+600 
+optcolour3 = colour+640 
+optcolour4 = colour+680
+
 ;Charset coded variables
 
 _eorcode = 128  ;Where the text charset has been assigned

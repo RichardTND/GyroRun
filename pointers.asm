@@ -78,12 +78,12 @@ playerdir   !byte $00,$01,$02,$03,$04,$05,$06,$07
 
 ;Sprite position for GET READY and game over
 getreadypos
-            !byte $44,$78,$54,$78,$64,$78,$34,$98
-            !byte $44,$98,$54,$98,$64,$98,$74,$98
+            !byte $46,$78,$56,$78,$66,$78,$36,$98
+            !byte $46,$98,$56,$98,$66,$98,$76,$98
             
 gameoverpos
-            !byte $3c,$78,$4c,$78,$5c,$78,$6c,$78
-            !byte $3c,$98,$4c,$98,$5c,$98,$6c,$98  
+            !byte $3e,$78,$4e,$78,$5e,$78,$6e,$78
+            !byte $3e,$98,$4e,$98,$5e,$98,$6e,$98  
             
 shieldcolourtable
             !byte $02,$08,$0a,$07,$01,$07,$0a,$08
@@ -222,35 +222,3 @@ screenlo        !byte $00,$28,$50,$78,$a0
                 !byte $58,$80,$a8,$d0,$f8 
                 !byte $20,$48,$70,$98,$c0,$e0
                 
-
-;In game sound effects pointers
-
-sfx_pickup1     !byte $0E,$EE,$88,$B0,$41,$B0,$B4,$B4,$B7,$B7,$BC,$BC,$C0,$C0,$BC,$BC
-                !byte $B7,$B7,$B4,$B4,$B0,$B0,$A0,$10,$00
-                
-sfx_pickup2     !byte $0E,$EE,$88,$B0,$41,$B0,$B2,$B4,$B6,$B8,$BA,$BA,$BC,$BC,$BE,$BE
-                !byte $90,$11,$00                
-                
-sfx_pickup3     !byte $0E,$EE,$88,$B0,$41,$C0,$C2,$C4,$C6,$C8,$CA,$CA,$CC,$CC,$CE,$CE
-                !byte $D0,$D1,$00       
-                    
-                                
-sfx_bomb        !byte $0E,$EE,$88,$BC,$81,$BB,$BC,$BB,$BA,$BB,$BA,$BB,$BA,$B9,$BA,$B9
-                !byte $B8,$B9,$B8,$B7,$B8,$B6,$B7,$B6,$B5,$B6,$B5,$B4,$B5,$B4,$B3,$B4
-                !byte $B3,$B2,$B3,$B2,$B1,$B0,$90,$10,$00                
-                
-sfx_dead        !byte $0E,$EE,$88,$BC,$41,$BB,$BC,$BB,$BA,$BB,$BA,$BB,$BA,$B9,$BA,$B9
-                !byte $B8,$B9,$B8,$B7,$B8,$B6,$B7,$B6,$B5,$B6,$B5,$B4,$B5,$B4,$B3,$B4
-                !byte $B3,$B2,$B3,$B2,$B1,$B0,$90,$10,$00                
-
-sfx_shift        
-                !byte $0e,$ee,$00,$C0,$81,$C3,$C4,$CC,$C7,$CC,$00
-                
-sfx_levelup    !byte $0E,$EE,$88,$BC,$41,$c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
-                !byte $b4,$b3,$b2,$b1,$b9
-                !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
-                !byte $b4,$b3,$b2,$b1,$b9
-                !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
-                !byte $b4,$b3,$b2,$b1,$b9
-                !byte $c0,$bf,$be,$bd,$bc,$bb,$ba,$b9,$b8,$b7,$b6,$b5            
-                !byte $b4,$b3,$b2,$b1,$b9,$90,$10,0

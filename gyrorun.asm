@@ -47,6 +47,9 @@ map
 ;Music
         !binary "c64\music.prg",,2
         
+*=$a000
+        !source "gameoptions.asm"
+        
 *=$c400
         !binary "c64\gyrovidram.prg",,2
 *=$c800

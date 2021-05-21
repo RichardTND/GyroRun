@@ -89,6 +89,10 @@ respawn
         ;All lives are lost, run game over 
         
 callgameover
+
+        lda #%11111111
+        sta $d015
+        sta $d01c
         jmp gameover
 
 ;---------------------------------------------------------------------------        
@@ -477,7 +481,8 @@ resetanim
 ;---------------------------------------------
 ;Game over routine 
 
-gameover 
+gameover lda #0
+         sta $d015
         lda #2
         jsr musicinit
            ldx #$00
@@ -497,6 +502,9 @@ putgoposition
           inx
           cpx #$10
           bne putgoposition
+          jsr expandspritearea
+          lda #$ff
+          sta $d015
           lda #0
           sta firebutton
 

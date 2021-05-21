@@ -5,7 +5,7 @@
 ;       (C) 2021 The New Dimension
 ;=======================================
         *=$4000
-        
+         ;KERNAL with use of $a000-$bfff
 ;Backup charset for use with the hi score
 ;name entry routine.
 
@@ -32,10 +32,7 @@ makespacechar
         sta pictureshowed
 
 ;Main game code
-        lda #8
-        jsr $ffd2
-        lda #252
-        sta 808
+      
         lda $02a6
         sta system
         jsr plotsweets
@@ -49,112 +46,9 @@ makespacechar
 ;---------------------------------------
 gamestart
       
-startnewgame
-
-        ;Clear out all the interrupts that are still 
-        ;running inside the title screen 
         
         jsr stopinterrupts
-        
-        ;Clear screen
-        
-        ldx #$00
-scrclrmode
-        lda #$a0
-        sta $0400,x
-        sta $0500,x
-        sta $0600,x
-        sta $06e8,x
-        lda #$07
-        sta $d800,x
-        sta $d900,x
-        sta $da00,x
-        sta $dae8,x
-        inx
-        bne scrclrmode
-        
-        ldx #$00
-copydiftext
-        lda difficultymenu,x 
-        eor #$80
-        sta screen+360,x 
-        lda difficultymenu+(1*40),x
-        eor #$80
-        sta screen+440,x
-        lda difficultymenu+(2*40),x
-        eor #$80
-        sta screen+480,x
-        lda difficultymenu+(3*40),x
-        eor #$80
-        sta screen+520,x
-        inx 
-        cpx #$28
-        bne copydiftext
-        lda #$08
-        sta $d016
-        lda #$18
-        sta $d018 
-        lda #$03
-        sta $dd00
-;Key press to select difficulty level curve
-;---------------------------------------
-;Setup the IRQ Raster interrupt player
-;---------------------------------------
-        lda $fb
-        txs
-        ldx #<gameirq
-        ldy #>gameirq
-        stx $0314
-        sty $0315
-        lda #$7f
-        sta $dc0d
-        lda #$36
-        sta $d012
-        lda #$1b
-        sta $d011
-        lda #$01
-        sta $d019
-        sta $d01a
-        lda #0
-        jsr musicinit
-        
-        cli
-        lda #8
-        jsr $ffd2
-optionloop
-        
-        jsr $ffe4
-        cmp #$31
-        beq skilleasy
-        cmp #$32
-        beq skillmedium 
-        cmp #$33
-        beq skillhard
-        jmp optionloop
-        
-skilleasy
-        lda #2
-        sta playerspeedskill
-        lda #200
-        sta shielddifficulty
-        jmp start 
-        
-skillmedium 
-        lda #1
-        sta playerspeedskill 
-        lda #150
-        sta shielddifficulty
-        jmp start 
-        
-skillhard
-        lda #0
-        sta playerspeedskill
-        lda #100
-        sta shielddifficulty
-         
-        
-       
-start        
+          
         ;Reset firebutton properties and 
         ;speed skill
 
@@ -211,8 +105,9 @@ silence lda #0
         lda #$18 ;Screen position multicolour
         sta $d016
                 
-        lda #$00 ;Black border + background
+        lda #$04 ;Black border + background
         sta $d020
+        lda #$00
         sta $d021
         lda #$0a ;Light red outline - Char multicolour 1
         sta $d022
@@ -225,7 +120,7 @@ silence lda #0
         sta playerwaittime
         
         ;Set amount of lives the player has to 3
-        lda #3
+startlives lda #3
         sta lives
         
         ;Draw game screen
@@ -276,13 +171,14 @@ scloop  lda #$30
         jsr livesindicator
         
         
+        
 ;---------------------------------------
 ;Setup the player sprite properties and
 ;other default game settings
 ;---------------------------------------
 
  
-        lda #$ff
+        lda #%11111111
         sta $d015
         sta $d01c
         ldx #$00
@@ -299,6 +195,24 @@ zerospriteframes
         lda #$0a
         sta $d026
         
+        ;Setup in game interrupts 
+      
+        ldx #<gameirq
+        ldy #>gameirq
+        lda #$7f
+        stx $fffe
+        sty $ffff
+        lda #$2a
+        sta $d012
+        lda #$1b
+        sta $d011
+        sta $dc0d
+        sta $dd0d
+        lda #$01
+        sta $d019
+        sta $d01a
+        
+        cli
         
         jmp getready ;Jump directly to the GET READY screen
         
@@ -313,41 +227,7 @@ setupgame
         ;Jump to main game loop
         jmp gameloop
 
-;---------------------------------------
-;Main IRQ raster interrupts
-;---------------------------------------
 
-gameirq
-
-        inc $d019
-        lda $dc0d
-        sta $dd0d
-        lda #$f8
-        sta $d012
-        
-        lda #1
-        sta rt
-        jsr musicplayer
-        jmp $ea31
-;---------------------------------------
-;Music player (PAL/NTSC check)
-;---------------------------------------
-
-musicplayer
-        lda system
-        cmp #1
-        beq pal
-        inc ntsctimer
-        lda ntsctimer
-        cmp #6
-        beq resetntsc
-pal     jsr musicplay
-        rts
-
-resetntsc
-        lda #0
-        sta ntsctimer
-        rts
         
 ;Setup the main game code - init all sprites,
 ;then position the player and the dial        
@@ -403,23 +283,28 @@ removeallsprites
         sta $07fb 
         lda #$e2 
         sta $07fc 
-        lda #$52
+        lda #$4c
         sta objpos+4
         clc
         adc #$0c
         sta objpos+6
        
-        adc #$06
+        adc #$0c
         sta objpos+8
        
-        lda #$36 
+        lda #$00 
         sta objpos+5
         sta objpos+7
         sta objpos+9
-        lda #1
+        lda #4
         sta $d029
         sta $d02a
         sta $d02b
+        lda #$b0
+        sta objpos+10
+        clc
+        adc #$0c
+        sta objpos+12
         jsr expandspritearea
         
         lda #1 ;Setup in game music
@@ -443,7 +328,7 @@ gameloop
         beq *-3
         ;Background animation
         jsr animbackground
-        
+        jsr screenexploder
         ;Main game loop sub routines, 
         ;merged with the synctimer (rt)
 
@@ -460,7 +345,7 @@ gameloop
         ;Level control 
         
         jsr levelcontrol
-        jsr screenexploder
+        
         jmp gameloop
 
 ;-----------------------------------------
@@ -810,6 +695,10 @@ levelup   lda #0
           cmp #$e9
           beq spawnnomore
           inc $07fc
+          
+        lda #%11111111
+        sta $d015
+        sta $d01c
           ;Reposition level up text 
           
           lda #1
@@ -865,6 +754,10 @@ movelevelup
           adc #2
           cmp #$ba
           bcc okaypos
+          
+          lda #%00011111
+          sta $d015
+          sta $d01c
           lda #0
           sta objpos+11
           sta objpos+13
@@ -903,6 +796,7 @@ putgrposition
           jsr musicinit
           lda #1
           sta dirpointer
+          sta playerdirset
           
 getreadyloop          
           lda #0
@@ -975,6 +869,73 @@ endexplode
           ldx #10
           stx explodepointer
           rts
+          
+;---------------------------------------
+;Main IRQ raster interrupts
+;---------------------------------------
+
+gameirq
+        sta stacka1+1
+        stx stackx1+1
+        sty stacky1+1
+        asl $d019
+        lda $dc0d
+        sta $dd0d
+        lda #$f8
+        sta $d012
+        lda #$1b
+        sta $d011
+        lda #$ff
+        sta $3fff
+        lda #1
+        sta rt
+        jsr musicplayer
+        ldx #<gameirq2
+        ldy #>gameirq2
+        stx $fffe
+        sty $ffff
+stacka1 lda #$00
+stackx1 ldx #$00
+stacky1 ldy #$00        
+nmi     rti
+
+gameirq2
+        sta stacka2+1
+        stx stackx2+1
+        sty stacky2+1
+        asl $d019
+        lda #$0a
+        sta $d012
+        lda #$07
+        sta $d011
+       
+        ldx #<gameirq
+        ldy #>gameirq
+        stx $fffe
+        sty $ffff
+stacka2 lda #0
+stackx2 ldx #0
+stacky2 ldy #0
+        rti
+;---------------------------------------
+;Music player (PAL/NTSC check)
+;---------------------------------------
+
+musicplayer
+        lda system
+        cmp #1
+        beq pal
+        inc ntsctimer
+        lda ntsctimer
+        cmp #6
+        beq resetntsc
+pal     jsr musicplay
+        rts
+
+resetntsc
+        lda #0
+        sta ntsctimer
+        rts          
 ;----------------------------------------------
 
         ;Include source code for player control

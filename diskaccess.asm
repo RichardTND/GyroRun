@@ -7,6 +7,7 @@ dnamelen = *-dname
 mainsave:
       jsr DisableInts 
       jsr savefile
+
 SkipHiScoreSaver      
 
       jmp TitleScreen
@@ -20,7 +21,10 @@ SkipHiScoreLoader:
       
 DisableInts:
       sei 
-       
+      
+      jsr stopinterrupts
+      lda #$37
+      sta $01
       ldx #$31
       stx $0314
       ldy #$ea

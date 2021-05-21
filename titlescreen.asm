@@ -6,7 +6,12 @@
 ;=======================================
 
 titlecode
+       
+      
 TitleScreen
+        lda #$35
+       sta $01
+       sei
 ;Destroy all IRQ raster interrupts
 
         ;Picture display should only be once.
@@ -50,14 +55,20 @@ showloop
         ;Call the main game IRQ for the picture
         ;displayer
         
-        ldx #<gameirq
-        ldy #>gameirq
+        lda #$35
+        sta $01
+        ldx #<hiirq
+        ldy #>hiirq
         lda #$7f
-        stx $0314
-        sty $0315
+        stx $fffe
+        sty $ffff
         sta $dc0d
-        
-        lda #$36
+        sta $dc0d
+        ldx #<nmi
+        ldy #>nmi
+        stx $fffa
+        sty $fffb
+        lda #$2a
         sta $d012
         lda #$01
         sta $d01a
@@ -259,8 +270,8 @@ clrdata lda #0
         ldx #<titleirq
         ldy #>titleirq
         lda #$7f
-        stx $0314
-        sty $0315
+        stx $fffe
+        sty $ffff
         sta $dc0d
         lda #$2e
         sta $d012
@@ -305,7 +316,7 @@ titleloop
         ror firebutton
         bmi titleloop2
         bvc titleloop2
-        jmp okstart
+        jmp gameoptions
 titleloop2        
         ;Check spacebar 
         lda $dc01
@@ -319,11 +330,8 @@ titleloop2
         bmi titleloop
         bvc titleloop
         
-okstart        
-        lda #0
-        sta firebutton
-      
-        jmp gamestart
+okstart
+        jmp gameoptions
         
 ;-----------------------------------------
 ;Swing hi score table - also add a fun 
@@ -508,8 +516,11 @@ scrloop9
 
 titleirq
         ;Scroll text message 
-
-        inc $d019
+        sta tstacka1+1
+        stx tstackx1+1
+        sty tstacky1+1
+        
+        asl $d019
         lda $dc0d
         sta $dd0d
         lda #$22
@@ -522,19 +533,21 @@ titleirq
         sta $d016 
         lda #$18
         sta $d018
-      ;  lda #1
-      ;  sta $d020
      
         ldx #<titleirq2
         ldy #>titleirq2
-        stx $0314
-        sty $0315
-        jmp $ea7e
-
+        stx $fffe
+        sty $ffff
+tstacka1 lda #$00
+tstackx1 ldx #$00
+tstacky1 ldy #$00        
+        rti
 titleirq2
         ;Bitmap logo
-
-        inc $d019
+        lda tstacka2+1
+        ldx tstackx2+1
+        ldy tstacky2+1
+        asl $d019
         lda #$78
         sta $d012
         lda #$02
@@ -554,14 +567,19 @@ titleirq2
         jsr musicplayer
         ldx #<titleirq3
         ldy #>titleirq3
-        stx $0314
-        sty $0315
-        jmp $ea7e
+        stx $fffe
+        sty $ffff
+tstacka2 lda #0
+tstackx2 ldx #0
+tstacky2 ldy #0
+        rti
 
 titleirq3
         ;Static screen text display 
-
-        inc $d019
+        sta tstacka3+1
+        stx tstackx3+1
+        sty tstacky3+1
+        asl $d019
         lda #$ba
         sta $d012
         lda #$03
@@ -576,15 +594,18 @@ titleirq3
     ;    sta $d020
         ldx #<titleirq 
         ldy #>titleirq 
-        stx $0314
-        sty $0315
-        jmp $ea7e
-        
+        stx $fffe
+        sty $ffff
+tstacka3  lda #$00
+tstackx3  ldx #$00
+tstacky3  ldy #$00
+          rti
 
 ;----------------------------------------
 ; Long colour wash routine - paint the 
 ; text up screen in slow motion
-;----------------------------------------        
+;----------------------------------------     
+   
 longcolourwash
         lda slowpaintdelay 
         cmp #3
@@ -638,11 +659,12 @@ shiftupcolour
 stopinterrupts
 
         sei
-        ldx #$31
-        ldy #$ea
+        ldx #$48
+        ldy #$ff
         lda #$81
-        stx $0314
-        sty $0315
+        stx $fffe
+        sty $ffff
+        lda #$81
         sta $dc0d
         sta $dd0d
         lda #$00
@@ -656,8 +678,7 @@ silent  lda #$00
         inx
         cpx #$18
         bne silent
-        lda #252
-        sta 808
+       
         ldx #$00
 clrmr   lda #0
         sta $d800,x
@@ -670,13 +691,8 @@ clrmr   lda #0
         sta $06e8,x
         inx 
         bne clrmr
-        ldx #$00
-wait001  ldy #$00
-wait002  iny
-        bne wait002
-        inx
-        bne wait001
       
+        
         rts
         
 swingpointer !byte 0
@@ -733,11 +749,7 @@ name5 !text "games     ........ "
 hiscore5     !text "001000     "
 hiscoreend
 
-difficultymenu 
-               !text "     please select game difficulty      "
-!text "        1. normal                       "
-!text "        2. a bit more difficult         "
-!text "        3. are you totally nuts?        "
+
 !align $ff,0
 
 ;Title screen scroll text
